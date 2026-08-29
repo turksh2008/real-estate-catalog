@@ -378,22 +378,23 @@
         }
       },
      mounted() {
-  // Fetch properties from Google Apps Script API
-  fetch(this.webAppUrl)
-    .then(response => response.json())
+  const webAppUrl = 'https://script.google.com/macros/s/AKfycbxNOs4k8H3SXAqIRkDXn1JSqUCHkFrSGR9_cTVTwYWOsu_5YYWV15w3rPEmRG4Z0A9zLQ/exec';
+
+  fetch(webAppUrl)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
     .then(data => {
+      console.log('Data successfully received from Google Apps Script:', data);
       this.properties = (data || []).map(p => ({ ...p, activeImgIndex: 0 }));
     })
-    .catch(error => console.error('Error fetching data:', error));
-};
-    data: {
-  // Replace with your copied Apps Script Web App URL from Step 2
-  webAppUrl: 'https://script.google.com/macros/s/AKfycbxNOs4k8H3SXAqIRkDXn1JSqUCHkFrSGR9_cTVTwYWOsu_5YYWV15w3rPEmRG4Z0A9zLQ/exec',
-  properties: [],
-  categories: [],
-  selectedCategory: '',
-  activeItem: null
-},
+    .catch(error => {
+      console.error('Error fetching properties:', error);
+    });
+}
   </script>
 
 </body>
