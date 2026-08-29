@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إدارة العقارات - Property Management</title>
+  <title>عقاراتي - Property Catalog</title>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
@@ -12,314 +12,411 @@
   <style>
     body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
     .hero-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
-    .whatsapp-btn { background-color: #25d366 !important; color: #fff !important; font-weight: 700; border: none; }
-    .property-card { border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; }
-    .table-container { background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-    .form-container { background: #fff; padding: 2rem; border-radius: 12px; max-width: 700px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-    .auth-box { background: #fff; padding: 2rem; border-radius: 12px; max-width: 400px; margin: 3rem auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    
+    /* WhatsApp Button Styling */
+    .whatsapp-btn {
+      background-color: #25d366 !important;
+      color: #ffffff !important;
+      font-weight: 700;
+      border: none;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
+    }
+    .whatsapp-btn:hover {
+      background-color: #20ba5a !important;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(37, 211, 102, 0.4);
+    }
+
+    /* Property Card Container */
+    .property-card {
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative !important;
+      overflow: hidden !important;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .property-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Grayscale Sold State */
+    .property-card.is-sold-card {
+      filter: grayscale(100%) opacity(0.75) !important;
+      background-color: #f8fafc !important;
+    }
+
+    /* Red Banner */
+    .card-sold-banner {
+      position: absolute;
+      top: 25px;
+      right: -40px;
+      transform: rotate(45deg);
+      background-color: #dc2626;
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 45px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+      z-index: 25;
+      pointer-events: none;
+    }
+
+    /* Carousel Styling */
+    .carousel-wrapper { 
+      position: relative; 
+      overflow: hidden; 
+      background-color: #0f172a;
+    }
+    .carousel-container {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .carousel-container::-webkit-scrollbar { display: none; }
+    .carousel-slide {
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      position: relative;
+    }
+    .carousel-slide img {
+      width: 100%;
+      height: 230px;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Swipe Badge Overlay */
+    .swipe-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(15, 23, 42, 0.65);
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 20;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Carousel Arrows */
+    .carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(15, 23, 42, 0.55);
+      color: #ffffff;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 15;
+    }
+    .carousel-arrow.left { left: 8px; }
+    .carousel-arrow.right { right: 8px; }
+
+    /* Carousel Dots */
+    .carousel-dots {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 5px;
+      z-index: 15;
+      pointer-events: none;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+    }
+    .dot.active {
+      background: #ffffff;
+      width: 14px;
+      border-radius: 4px;
+    }
+
+    .card-content-box {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-grow: 1;
+      gap: 12px;
+    }
+
+    .prop-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 0 !important;
+    }
+
+    .prop-location {
+      font-size: 0.875rem;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 0 !important;
+    }
+
+    .spec-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #475569;
+      font-size: 0.825rem;
+      font-weight: 500;
+      margin-left: 12px;
+    }
+
+    .strike-price {
+      text-decoration: line-through;
+      color: #dc2626 !important;
+    }
   </style>
 </head>
 <body>
-  <div id="app">
+  <div id="app" v-cloak>
     <!-- Header Hero Section -->
     <section class="hero hero-bg is-small">
       <div class="hero-body">
         <div class="container">
-          <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+          <div class="is-flex is-justify-content-space-between is-align-items-center">
             <div>
               <h1 class="title has-text-white is-size-3 mb-1">
-                <span class="material-icons" style="vertical-align: middle;">domain</span> إدارة العقارات
+                <span class="material-icons" style="vertical-align: middle;">domain</span> عقاراتي
               </h1>
+              <h2 class="subtitle has-text-grey-light is-size-6 mt-1">تصفح العقارات المتاحة</h2>
             </div>
+            
+            <!-- Header WhatsApp Button -->
             <a href="https://wa.me/96894249942" target="_blank" class="button whatsapp-btn is-rounded">
-              <span class="material-icons ml-1">chat</span>
+              <span class="material-icons ml-1" style="font-size: 20px;">chat</span>
               <span>تواصل معنا</span>
             </a>
           </div>
-
-          <!-- Navigation Header Tabs -->
-<div class="tabs is-centered is-toggle mt-4">
-  <ul>
-    <li :class="{'is-active': activeTab === 'catalog'}"><a @click="activeTab = 'catalog'">المعروضات (Catalog)</a></li>
-    <li :class="{'is-active': activeTab === 'table'}"><a @click="activeTab = 'table'">جدول البيانات (Table)</a></li>
-    <li :class="{'is-active': activeTab === 'form'}"><a @click="activeTab = 'form'">إضافة عقار (Add Property)</a></li>
-  </ul>
-</div>
-
-<!-- Admin Table View -->
-<div v-if="activeTab === 'table'" class="container py-4">
-  <table class="table is-fullwidth is-striped is-hoverable">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>العنوان</th>
-        <th>النوع</th>
-        <th>السعر</th>
-        <th>الموقع</th>
-        <th>الحالة</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="item in properties" :key="item.id">
-        <td>{{item.id}}</td>
-        <td>{{item.title}}</td>
-        <td>{{item.propertyType}}</td>
-        <td>{{item.price}} OMR</td>
-        <td>{{item.location}}</td>
-        <td><span class="tag" :class="isSold(item) ? 'is-danger' : 'is-success'">{{getStatusText(item)}}</span></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- Add Property Form View -->
-<div v-if="activeTab === 'form'" class="container py-4" style="max-width: 600px;">
-  <form @submit.prevent="submitNewProperty" class="box">
-    <h3 class="title is-4">إضافة عقار جديد</h3>
-    
-    <div class="field">
-      <label class="label">كود الحماية (Secret Code)</label>
-      <input class="input" type="password" v-model="form.secretCode" required placeholder="Enter Secret Code">
-    </div>
-
-    <div class="field">
-      <label class="label">عنوان العقار</label>
-      <input class="input" type="text" v-model="form.title" required>
-    </div>
-
-    <div class="field">
-      <label class="label">السعر (OMR)</label>
-      <input class="input" type="number" v-model="form.price" required>
-    </div>
-
-    <div class="field">
-      <label class="label">الموقع</label>
-      <input class="input" type="text" v-model="form.location" required>
-    </div>
-
-    <div class="field">
-      <label class="label">رفع صورة</label>
-      <input class="input" type="file" @change="handleFileUpload" accept="image/*">
-      <p v-if="uploadingImage" class="help is-info">جاري رفع الصورة...</p>
-      <p v-if="form.images.length" class="help is-success">تم رفع {{form.images.length}} صورة</p>
-    </div>
-
-    <button class="button is-primary is-fullwidth" :class="{'is-loading': submitting}">حفظ العقار</button>
-  </form>
-</div>
-
-    <!-- Main Content Body -->
-    <section class="section py-5">
-      <div class="container">
-
-        <!-- Passcode Entry Dialog (If access denied) -->
-        <div v-if="requiresAuth" class="auth-box has-text-centered">
-          <span class="material-icons has-text-warning" style="font-size: 48px;">lock</span>
-          <h3 class="title is-5 mt-2">قسم محمي كـ Admin</h3>
-          <p class="subtitle is-6 has-text-grey mb-4">الرجاء إدخال الرمز السري للوصول</p>
-          
-          <div class="field">
-            <div class="control">
-              <input class="input has-text-centered" type="password" v-model="passcodeInput" placeholder="****" @keyup.enter="verifyCode">
-            </div>
-          </div>
-          <p v-if="authError" class="has-text-danger help mb-3">الرمز السري غير صحيح</p>
-          
-          <button class="button is-dark is-fullwidth" @click="verifyCode">دخول</button>
         </div>
-
-        <!-- Normal Views (When Authorized or on Public Catalog) -->
-        <template v-else>
-          <!-- 1. CATALOG VIEW (Public Access) -->
-          <div v-if="activeTab === 'catalog'" class="columns is-multiline">
-            <div v-for="item in properties" :key="item.id" class="column is-12-mobile is-6-tablet is-4-desktop">
-              <div class="property-card p-4">
-                <h3 class="title is-5 mb-2">{{item.title}}</h3>
-                <p class="subtitle is-6 has-text-primary">OMR {{Number(item.price || 0).toLocaleString()}}</p>
-                <p class="has-text-grey">{{item.location}}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. TABLE VIEW (Protected) -->
-          <div v-if="activeTab === 'table'" class="table-container">
-            <h2 class="title is-4 mb-4">قائمة العقارات (Listings Table)</h2>
-            <div class="table-container">
-              <table class="table is-fullwidth is-striped is-hoverable">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>العنوان (Title)</th>
-                    <th>النوع (Type)</th>
-                    <th>السعر (Price)</th>
-                    <th>الموقع (Location)</th>
-                    <th>الحالة (Status)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in properties" :key="item.id">
-                    <td>{{item.id}}</td>
-                    <td><strong>{{item.title}}</strong></td>
-                    <td>{{item.propertyType}}</td>
-                    <td>OMR {{Number(item.price || 0).toLocaleString()}}</td>
-                    <td>{{item.location}}</td>
-                    <td>
-                      <span class="tag" :class="item.status === 'Available' ? 'is-success' : 'is-danger'">
-                        {{item.status || 'Available'}}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- 3. ADD PROPERTY FORM VIEW (Protected) -->
-          <div v-if="activeTab === 'form'" class="form-container">
-            <h2 class="title is-4 mb-4">إضافة عقار جديد (Add New Property)</h2>
-            <form @submit.prevent="submitForm">
-              <div class="field">
-                <label class="label">عنوان العقار (Title)</label>
-                <div class="control">
-                  <input class="input" type="text" v-model="formData.title" required placeholder="مثال: فيلا للبيع في المعبيلة">
-                </div>
-              </div>
-
-              <div class="columns">
-                <div class="column">
-                  <div class="field">
-                    <label class="label">نوع العقار (Property Type)</label>
-                    <div class="control">
-                      <div class="select is-fullwidth">
-                        <select v-model="formData.propertyType">
-                          <option value="Villa">فيلا (Villa)</option>
-                          <option value="Apartment">شقة (Apartment)</option>
-                          <option value="Land">أرض (Land)</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="column">
-                  <div class="field">
-                    <label class="label">السعر (Price in OMR)</label>
-                    <div class="control">
-                      <input class="input" type="number" v-model="formData.price" required placeholder="50000">
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="field">
-                <label class="label">الموقع (Location)</label>
-                <div class="control">
-                  <input class="input" type="text" v-model="formData.location" required placeholder="السيب، مسقط">
-                </div>
-              </div>
-
-              <div class="field">
-                <label class="label">روابط الصور (Image URLs)</label>
-                <div class="control">
-                  <textarea class="textarea" v-model="formData.images" rows="2"></textarea>
-                </div>
-              </div>
-
-              <div class="field">
-                <label class="label">الوصف (Description)</label>
-                <div class="control">
-                  <textarea class="textarea" v-model="formData.description" rows="3"></textarea>
-                </div>
-              </div>
-
-              <button class="button is-primary is-fullwidth mt-4" :class="{'is-loading': submitting}" type="submit">
-                حفظ العقار (Save Property)
-              </button>
-            </form>
-          </div>
-        </template>
       </div>
     </section>
+
+    <!-- Main Content Grid -->
+    <section class="section py-5">
+      <div class="container">
+        
+        <!-- Loading Spinner -->
+        <div v-if="loading" class="has-text-centered py-6">
+          <button class="button is-loading is-large is-white" style="border:none;"></button>
+          <p class="has-text-grey mt-2">جاري تحميل العقارات...</p>
+        </div>
+
+        <!-- Property Grid -->
+        <div v-else class="columns is-multiline">
+          <div v-for="item in properties" :key="item.id" class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="property-card" :class="{'is-sold-card': isSold(item)}">
+              
+              <!-- Sold Banner -->
+              <div class="card-sold-banner" v-if="isSold(item)">
+                {{ getStatusText(item) }}
+              </div>
+
+              <!-- Carousel -->
+              <div class="carousel-wrapper">
+                <div v-if="item.images && item.images.length > 1" class="swipe-badge">
+                  <span class="material-icons" style="font-size: 14px;">swipe</span>
+                  <span>سحب</span>
+                </div>
+
+                <button v-if="item.images && item.images.length > 1" class="carousel-arrow right" @click.stop="nextSlide(item)">
+                  <span class="material-icons" style="font-size: 18px;">chevron_right</span>
+                </button>
+
+                <div class="carousel-container" :ref="'carousel_' + item.id" @scroll="onScroll(item, $event)">
+                  <div v-for="(img, idx) in item.images" :key="idx" class="carousel-slide" @click="openModal(item)" style="cursor: pointer;">
+                    <img :src="img || 'https://via.placeholder.com/400x230?text=No+Image'" loading="lazy" alt="Property Image">
+                  </div>
+                </div>
+
+                <button v-if="item.images && item.images.length > 1" class="carousel-arrow left" @click.stop="prevSlide(item)">
+                  <span class="material-icons" style="font-size: 18px;">chevron_left</span>
+                </button>
+
+                <div v-if="item.images && item.images.length > 1" class="carousel-dots">
+                  <span v-for="(img, idx) in item.images" :key="idx" class="dot" :class="{'active': (item.activeImgIndex || 0) === idx}"></span>
+                </div>
+              </div>
+
+              <!-- Content Box -->
+              <div class="card-content-box" @click="openModal(item)" style="cursor: pointer;">
+                <div>
+                  <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                    <span class="tag is-rounded has-text-weight-bold" :class="isSold(item) ? 'is-danger' : 'is-info is-light'">
+                      {{ isSold(item) ? getStatusText(item) : (item.listingType || item.ListingType) }}
+                    </span>
+                    <p class="title is-4 has-text-primary mb-0" :class="{'strike-price': isSold(item)}">
+                      OMR {{Number(item.price || item.Price || 0).toLocaleString()}}
+                    </p>
+                  </div>
+
+                  <h3 class="prop-title mt-2">{{item.title || item.Title}}</h3>
+                </div>
+
+                <div>
+                  <p class="prop-location">
+                    <span class="material-icons" style="font-size: 16px; color: #0284c7;">place</span>
+                    <span>{{item.location || item.Location}}</span>
+                  </p>
+
+                  <div class="is-flex is-align-items-center pt-3 mt-3" style="border-top: 1px solid #f1f5f9;">
+                    <div class="spec-item" v-if="(item.bedrooms || item.Bedrooms) && (item.propertyType || item.PropertyType) !== 'Land'">
+                      <span class="material-icons" style="font-size: 16px;">king_bed</span> {{item.bedrooms || item.Bedrooms}} غرف
+                    </div>
+                    <div class="spec-item" v-if="(item.bathrooms || item.Bathrooms) && (item.propertyType || item.PropertyType) !== 'Land'">
+                      <span class="material-icons" style="font-size: 16px;">bathtub</span> {{item.bathrooms || item.Bathrooms}} حمام
+                    </div>
+                    <div class="spec-item" v-if="item.landSize || item.LandSize">
+                      <span class="material-icons" style="font-size: 16px;">square_foot</span> {{item.landSize || item.LandSize}} م²
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modal Detail View -->
+    <div class="modal" :class="{'is-active': activeItem}">
+      <div class="modal-background" @click="activeItem = null"></div>
+      <div class="modal-card" v-if="activeItem" style="max-width: 700px;">
+        <header class="modal-card-head">
+          <p class="modal-card-title">{{activeItem.title || activeItem.Title}}</p>
+          <button class="delete" aria-label="close" @click="activeItem = null"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="carousel-container mb-4" style="border-radius: 8px;">
+            <div v-for="(img, idx) in activeItem.images" :key="idx" class="carousel-slide">
+              <img :src="img" style="height: 350px; object-fit: cover;">
+            </div>
+          </div>
+          <div class="content">
+            <h3 class="has-text-primary" :class="{'strike-price': isSold(activeItem)}">
+              OMR {{Number(activeItem.price || activeItem.Price || 0).toLocaleString()}}
+            </h3>
+            <p><strong>الموقع:</strong> {{activeItem.location || activeItem.Location}}</p>
+            
+            <div class="is-flex is-align-items-center my-3 py-2" style="border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
+              <div class="spec-item" v-if="(activeItem.bedrooms || activeItem.Bedrooms) && (activeItem.propertyType || activeItem.PropertyType) !== 'Land'">
+                <span class="material-icons" style="font-size: 18px;">king_bed</span> {{activeItem.bedrooms || activeItem.Bedrooms}} غرف
+              </div>
+              <div class="spec-item" v-if="(activeItem.bathrooms || activeItem.Bathrooms) && (activeItem.propertyType || activeItem.PropertyType) !== 'Land'">
+                <span class="material-icons" style="font-size: 18px;">bathtub</span> {{activeItem.bathrooms || activeItem.Bathrooms}} حمام
+              </div>
+              <div class="spec-item" v-if="activeItem.landSize || activeItem.LandSize">
+                <span class="material-icons" style="font-size: 18px;">square_foot</span> {{activeItem.landSize || activeItem.LandSize}} م²
+              </div>
+            </div>
+
+            <p><strong>الوصف:</strong></p>
+            <p style="white-space: pre-line;">{{activeItem.description || activeItem.Description}}</p>
+            
+            <!-- Modal WhatsApp Action -->
+            <div class="mt-5">
+              <a :href="'https://wa.me/96894249942?text=' + encodeURIComponent('مرحباً، أود الاستفسار عن: ' + (activeItem.title || activeItem.Title))" target="_blank" class="button whatsapp-btn is-fullwidth">
+                <span class="material-icons ml-1">chat</span> تواصل معنا عبر واتساب
+              </a>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
 
   <script>
     new Vue({
       el: '#app',
       data: {
-  activeTab: 'catalog',
-  webAppUrl: 'https://script.google.com/macros/s/AKfycbz0QPRz1P_Q_pNHLS3fSlcLg_SvWAbWpIXLYnvgTq2bHAUkA0r0ImVwbb8vpVUXRlI8CQ/exec',
-  submitting: false,
-  uploadingImage: false,
-  form: {
-    secretCode: '',
-    title: '',
-    price: '',
-    location: '',
-    propertyType: 'Residential',
-    listingType: 'Sale',
-    images: []
-  }
-},
-methods: {
-  handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    if (!this.form.secretCode) {
-      alert('الرجاء أدخل كود الحماية أولاً (Please enter secret code first)');
-      return;
-    }
-
-    this.uploadingImage = true;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64Data = e.target.result.split(',')[1];
-      
-      fetch(this.webAppUrl, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'uploadImage',
-          secretCode: this.form.secretCode,
-          fileName: file.name,
-          mimeType: file.type,
-          fileData: base64Data
-        })
-      })
-      .then(res => res.json())
-      .then(res => {
-        this.uploadingImage = false;
-        if (res.status === 'success') {
-          this.form.images.push(res.url);
-          alert('تم رفع الصورة بنجاح!');
-        } else {
-          alert('خطأ: ' + res.message);
+        // REPLACE THIS URL WITH YOUR APPS SCRIPT WEB APP EXEC URL
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbz0QPRz1P_Q_pNHLS3fSlcLg_SvWAbWpIXLYnvgTq2bHAUkA0r0ImVwbb8vpVUXRlI8CQ/exec',
+        properties: [],
+        activeItem: null,
+        loading: true
+      },
+      methods: {
+        fetchProperties() {
+          this.loading = true;
+          fetch(this.webAppUrl)
+            .then(res => res.json())
+            .then(data => {
+              this.properties = (data || []).map(p => ({ ...p, activeImgIndex: 0 }));
+              this.loading = false;
+            })
+            .catch(err => {
+              console.error('Error fetching properties:', err);
+              this.loading = false;
+            });
+        },
+        openModal(item) {
+          this.activeItem = item;
+        },
+        isSold(item) {
+          if (!item) return false;
+          const val = String(item.status || item.Status || '').trim().toLowerCase();
+          return val !== '' && val !== 'available';
+        },
+        getStatusText(item) {
+          if (!item) return 'تم البيع';
+          const val = String(item.status || item.Status || '').trim().toUpperCase();
+          return (val === 'AVAILABLE' || val === '') ? 'تم البيع' : val;
+        },
+        nextSlide(item) {
+          const container = this.$refs['carousel_' + item.id][0];
+          container.scrollBy({ left: -container.clientWidth, behavior: 'smooth' });
+        },
+        prevSlide(item) {
+          const container = this.$refs['carousel_' + item.id][0];
+          container.scrollBy({ left: container.clientWidth, behavior: 'smooth' });
+        },
+        onScroll(item, event) {
+          const container = event.target;
+          const index = Math.round(Math.abs(container.scrollLeft) / container.clientWidth);
+          this.$set(item, 'activeImgIndex', index);
         }
-      });
-    };
-    reader.readAsDataURL(file);
-  },
-
-  submitNewProperty() {
-    this.submitting = true;
-    fetch(this.webAppUrl, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'addProperty',
-        secretCode: this.form.secretCode,
-        property: this.form
-      })
-    })
-    .then(res => res.json())
-    .then(res => {
-      this.submitting = false;
-      if (res.status === 'success') {
-        alert('تمت إضافة العقار بنجاح');
+      },
+      mounted() {
         this.fetchProperties();
-        this.activeTab = 'catalog';
-      } else {
-        alert('خطأ: ' + res.message);
       }
     });
-  }
-}
   </script>
 </body>
 </html>
