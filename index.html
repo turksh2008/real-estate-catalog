@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>عقاراتي - Property Catalog</title>
   
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
@@ -10,54 +10,80 @@
   <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
 
   <style>
-    [v-cloak] { display: none; }
-    body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
-    .hero-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body { 
+      background-color: #f8f9fa; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      margin: 0;
+      padding: 0;
+    }
+
+    [v-cloak] { display: none !important; }
+
+    .hero-bg { 
+      background: #1e293b;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+    }
     
-    /* WhatsApp Button Styling */
+    /* WhatsApp Button */
     .whatsapp-btn {
       background-color: #25d366 !important;
       color: #ffffff !important;
       font-weight: 700;
       border: none;
+      -webkit-transition: all 0.25s ease;
       transition: all 0.25s ease;
       box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
     }
     .whatsapp-btn:hover {
       background-color: #20ba5a !important;
+      -webkit-transform: translateY(-2px);
       transform: translateY(-2px);
       box-shadow: 0 6px 14px rgba(37, 211, 102, 0.4);
     }
 
-    /* Property Card Container */
+    /* Property Card */
     .property-card {
       border-radius: 12px;
       border: 1px solid #e2e8f0;
       background: #ffffff;
+      display: -webkit-box;
+      display: -ms-flexbox;
       display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: column;
       flex-direction: column;
       height: 100%;
       position: relative !important;
       overflow: hidden !important;
+      -webkit-transition: all 0.25s ease;
       transition: all 0.25s ease;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
     .property-card:hover {
+      -webkit-transform: translateY(-4px);
       transform: translateY(-4px);
       box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.1);
     }
 
-    /* Grayscale Sold State */
+    /* Sold Card State */
     .property-card.is-sold-card {
+      -webkit-filter: grayscale(100%) opacity(0.75) !important;
       filter: grayscale(100%) opacity(0.75) !important;
       background-color: #f8fafc !important;
     }
 
-    /* Red Banner */
+    /* Sold Banner */
     .card-sold-banner {
       position: absolute;
       top: 25px;
       right: -40px;
+      -webkit-transform: rotate(45deg);
       transform: rotate(45deg);
       background-color: #dc2626;
       color: #ffffff;
@@ -71,33 +97,37 @@
       pointer-events: none;
     }
 
-    /* Cross-Browser Safari/Chrome Compatible Carousel */
+    /* Cross-Browser Carousel Container */
     .carousel-wrapper { 
       position: relative; 
       overflow: hidden; 
       background-color: #0f172a;
       width: 100%;
-      min-height: 230px;
     }
     .carousel-container {
+      display: -webkit-box;
+      display: -ms-flexbox;
       display: flex;
-      overflow-x: auto;
+      overflow-x: scroll;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
-      scroll-behavior: smooth;
-      width: 100%;
+      -ms-overflow-style: none;
     }
-    .carousel-container::-webkit-scrollbar { display: none; }
+    .carousel-container::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    
     .carousel-slide {
+      -webkit-box-flex: 0;
+      -ms-flex: 0 0 100%;
       flex: 0 0 100%;
-      width: 100%;
       scroll-snap-align: start;
       position: relative;
+      width: 100%;
     }
     .carousel-slide img {
       width: 100%;
       height: 230px;
+      aspect-ratio: 16/9;
       object-fit: cover;
       display: block;
     }
@@ -113,7 +143,11 @@
       border-radius: 20px;
       font-size: 0.75rem;
       font-weight: 600;
+      display: -webkit-box;
+      display: -ms-flexbox;
       display: flex;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
       align-items: center;
       gap: 4px;
       z-index: 20;
@@ -122,19 +156,26 @@
       backdrop-filter: blur(4px);
     }
 
-    /* Carousel Arrows */
+    /* Carousel Navigation Arrows */
     .carousel-arrow {
       position: absolute;
       top: 50%;
+      -webkit-transform: translateY(-50%);
       transform: translateY(-50%);
-      background: rgba(15, 23, 42, 0.55);
+      background: rgba(15, 23, 42, 0.65);
       color: #ffffff;
       border: none;
       border-radius: 50%;
       width: 32px;
       height: 32px;
+      display: -webkit-box;
+      display: -ms-flexbox;
       display: flex;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
       align-items: center;
+      -webkit-box-pack: center;
+      -ms-flex-pack: center;
       justify-content: center;
       cursor: pointer;
       z-index: 15;
@@ -142,12 +183,15 @@
     .carousel-arrow.left { left: 8px; }
     .carousel-arrow.right { right: 8px; }
 
-    /* Carousel Dots */
+    /* Carousel Indicators */
     .carousel-dots {
       position: absolute;
       bottom: 10px;
       left: 50%;
+      -webkit-transform: translateX(-50%);
       transform: translateX(-50%);
+      display: -webkit-box;
+      display: -ms-flexbox;
       display: flex;
       gap: 5px;
       z-index: 15;
@@ -167,9 +211,18 @@
 
     .card-content-box {
       padding: 1.25rem;
+      display: -webkit-box;
+      display: -ms-flexbox;
       display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: column;
       flex-direction: column;
+      -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
       justify-content: space-between;
+      -webkit-box-flex: 1;
+      -ms-flex-positive: 1;
       flex-grow: 1;
       gap: 12px;
     }
@@ -189,14 +242,22 @@
     .prop-location {
       font-size: 0.875rem;
       color: #64748b;
+      display: -webkit-box;
+      display: -ms-flexbox;
       display: flex;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
       align-items: center;
       gap: 4px;
       margin-bottom: 0 !important;
     }
 
     .spec-item {
+      display: -webkit-inline-box;
+      display: -ms-inline-flexbox;
       display: inline-flex;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
       align-items: center;
       gap: 4px;
       color: #475569;
@@ -210,6 +271,7 @@
       color: #dc2626 !important;
     }
 
+    /* Filter Panel */
     .filter-card {
       background: #ffffff;
       border-radius: 12px;
@@ -224,6 +286,7 @@
 </head>
 <body>
   <div id="app" v-cloak>
+    <!-- Header Hero Section -->
     <section class="hero hero-bg is-small">
       <div class="hero-body">
         <div class="container">
@@ -235,7 +298,7 @@
               <h2 class="subtitle has-text-grey-light is-size-6 mt-1">تصفح العقارات المتاحة</h2>
             </div>
             
-            <a href="https://wa.me/96894249942" target="_blank" class="button whatsapp-btn is-rounded">
+            <a href="https://wa.me/96894249942" target="_blank" rel="noopener noreferrer" class="button whatsapp-btn is-rounded">
               <span class="material-icons ml-1" style="font-size: 20px;">chat</span>
               <span>تواصل معنا</span>
             </a>
@@ -244,9 +307,11 @@
       </div>
     </section>
 
+    <!-- Main Content -->
     <section class="section py-5">
       <div class="container">
         
+        <!-- Filter Controls -->
         <div class="filter-card mb-5" v-if="!loading">
           <div class="columns is-vcentered is-mobile is-multiline">
             
@@ -277,42 +342,46 @@
           </div>
         </div>
 
+        <!-- Loading State -->
         <div v-if="loading" class="has-text-centered py-6">
-          <button class="button is-loading is-large is-white" style="border:none;"></button>
+          <button class="button is-loading is-large is-white" style="border:none;" aria-label="Loading"></button>
           <p class="has-text-grey mt-2">جاري تحميل العقارات...</p>
         </div>
 
+        <!-- Empty State -->
         <div v-else-if="filteredProperties.length === 0" class="has-text-centered py-6">
           <span class="material-icons has-text-grey-light" style="font-size: 48px;">search_off</span>
           <p class="is-size-5 has-text-grey mt-2">لا توجد عقارات تطابق خيارات التصفية الحالية.</p>
           <button class="button is-small is-light mt-3" @click="selectedStatus = 'all'; selectedType = 'all';">إعادة ضبط التصفية</button>
         </div>
 
+        <!-- Grid Cards -->
         <div v-else class="columns is-multiline">
-          <div v-for="item in filteredProperties" :key="item.id || item.ID" class="column is-12-mobile is-6-tablet is-4-desktop">
+          <div v-for="item in filteredProperties" :key="item.id" class="column is-12-mobile is-6-tablet is-4-desktop">
             <div class="property-card" :class="{'is-sold-card': isSold(item)}">
               
               <div class="card-sold-banner" v-if="isSold(item)">
                 {{ getStatusText(item) }}
               </div>
 
+              <!-- Carousel Component -->
               <div class="carousel-wrapper">
                 <div v-if="item.images && item.images.length > 1" class="swipe-badge">
                   <span class="material-icons" style="font-size: 14px;">swipe</span>
                   <span>سحب</span>
                 </div>
 
-                <button v-if="item.images && item.images.length > 1" class="carousel-arrow right" @click.stop="nextSlide(item)">
+                <button v-if="item.images && item.images.length > 1" class="carousel-arrow right" @click.stop="scrollCarousel(item, 'next')" aria-label="Next">
                   <span class="material-icons" style="font-size: 18px;">chevron_right</span>
                 </button>
 
-                <div class="carousel-container" :ref="'carousel_' + (item.id || item.ID)" @scroll="onScroll(item, $event)">
+                <div class="carousel-container" :ref="'carousel_' + item.id" @scroll="onScroll(item, $event)">
                   <div v-for="(img, idx) in item.images" :key="idx" class="carousel-slide" @click="openModal(item)" style="cursor: pointer;">
                     <img :src="img || 'https://via.placeholder.com/400x230?text=No+Image'" loading="lazy" alt="Property Image">
                   </div>
                 </div>
 
-                <button v-if="item.images && item.images.length > 1" class="carousel-arrow left" @click.stop="prevSlide(item)">
+                <button v-if="item.images && item.images.length > 1" class="carousel-arrow left" @click.stop="scrollCarousel(item, 'prev')" aria-label="Previous">
                   <span class="material-icons" style="font-size: 18px;">chevron_left</span>
                 </button>
 
@@ -321,14 +390,15 @@
                 </div>
               </div>
 
+              <!-- Content Area -->
               <div class="card-content-box" @click="openModal(item)" style="cursor: pointer;">
                 <div>
                   <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
                     <span class="tag is-rounded has-text-weight-bold" :class="isSold(item) ? 'is-danger' : 'is-info is-light'">
-                      {{ isSold(item) ? getStatusText(item) : (item.listingType || item.ListingType || 'للبيع') }}
+                      {{ isSold(item) ? getStatusText(item) : (item.listingType || item.ListingType) }}
                     </span>
                     <p class="title is-4 has-text-primary mb-0" :class="{'strike-price': isSold(item)}">
-                      OMR {{Number(item.price || item.Price || 0).toLocaleString()}}
+                      OMR {{ formatPrice(item.price || item.Price) }}
                     </p>
                   </div>
 
@@ -348,8 +418,8 @@
                     <div class="spec-item" v-if="(item.bathrooms || item.Bathrooms) && (item.propertyType || item.PropertyType) !== 'Land'">
                       <span class="material-icons" style="font-size: 16px;">bathtub</span> {{item.bathrooms || item.Bathrooms}} حمام
                     </div>
-                    <div class="spec-item" v-if="item.landSize || item.LandSize || item.land_size">
-                      <span class="material-icons" style="font-size: 16px;">square_foot</span> {{item.landSize || item.LandSize || item.land_size}} م²
+                    <div class="spec-item" v-if="item.landSize || item.LandSize">
+                      <span class="material-icons" style="font-size: 16px;">square_foot</span> {{item.landSize || item.LandSize}} م²
                     </div>
                   </div>
                 </div>
@@ -361,9 +431,10 @@
       </div>
     </section>
 
+    <!-- Details Modal -->
     <div class="modal" :class="{'is-active': activeItem}">
       <div class="modal-background" @click="activeItem = null"></div>
-      <div class="modal-card" v-if="activeItem" style="max-width: 700px;">
+      <div class="modal-card" v-if="activeItem" style="max-width: 700px; width: 92%;">
         <header class="modal-card-head">
           <p class="modal-card-title">{{activeItem.title || activeItem.Title}}</p>
           <button class="delete" aria-label="close" @click="activeItem = null"></button>
@@ -371,12 +442,12 @@
         <section class="modal-card-body">
           <div class="carousel-container mb-4" style="border-radius: 8px;">
             <div v-for="(img, idx) in activeItem.images" :key="idx" class="carousel-slide">
-              <img :src="img" style="height: 350px; object-fit: cover;">
+              <img :src="img" style="height: 350px; object-fit: cover; width: 100%;">
             </div>
           </div>
           <div class="content">
             <h3 class="has-text-primary" :class="{'strike-price': isSold(activeItem)}">
-              OMR {{Number(activeItem.price || activeItem.Price || 0).toLocaleString()}}
+              OMR {{ formatPrice(activeItem.price || activeItem.Price) }}
             </h3>
             <p><strong>الموقع:</strong> {{activeItem.location || activeItem.Location}}</p>
             
@@ -387,8 +458,8 @@
               <div class="spec-item" v-if="(activeItem.bathrooms || activeItem.Bathrooms) && (activeItem.propertyType || activeItem.PropertyType) !== 'Land'">
                 <span class="material-icons" style="font-size: 18px;">bathtub</span> {{activeItem.bathrooms || activeItem.Bathrooms}} حمام
               </div>
-              <div class="spec-item" v-if="activeItem.landSize || activeItem.LandSize || activeItem.land_size">
-                <span class="material-icons" style="font-size: 18px;">square_foot</span> {{activeItem.landSize || activeItem.LandSize || activeItem.land_size}} م²
+              <div class="spec-item" v-if="activeItem.landSize || activeItem.LandSize">
+                <span class="material-icons" style="font-size: 18px;">square_foot</span> {{activeItem.landSize || activeItem.LandSize}} م²
               </div>
             </div>
 
@@ -396,7 +467,7 @@
             <p style="white-space: pre-line;">{{activeItem.description || activeItem.Description}}</p>
             
             <div class="mt-5">
-              <a :href="'https://wa.me/96894249942?text=' + encodeURIComponent('مرحباً، أود الاستفسار عن: ' + (activeItem.title || activeItem.Title))" target="_blank" class="button whatsapp-btn is-fullwidth">
+              <a :href="'https://wa.me/96894249942?text=' + encodeURIComponent('مرحباً، أود الاستفسار عن: ' + (activeItem.title || activeItem.Title))" target="_blank" rel="noopener noreferrer" class="button whatsapp-btn is-fullwidth">
                 <span class="material-icons ml-1">chat</span> تواصل معنا عبر واتساب
               </a>
             </div>
@@ -418,94 +489,78 @@
         selectedType: 'all'
       },
       computed: {
-        filteredProperties() {
-          return this.properties.filter(item => {
-            const isSoldItem = this.isSold(item);
+        filteredProperties: function() {
+          var self = this;
+          return this.properties.filter(function(item) {
+            var isSoldItem = self.isSold(item);
             
-            if (this.selectedStatus === 'available' && isSoldItem) return false;
-            if (this.selectedStatus === 'sold' && !isSoldItem) return false;
+            if (self.selectedStatus === 'available' && isSoldItem) return false;
+            if (self.selectedStatus === 'sold' && !isSoldItem) return false;
 
-            const listingType = String(item.listingType || item.ListingType || '').toLowerCase();
-            if (this.selectedType === 'sale' && !(listingType.includes('sale') || listingType.includes('بيع'))) return false;
-            if (this.selectedType === 'rent' && !(listingType.includes('rent') || listingType.includes('إيجار') || listingType.includes('ايجار'))) return false;
+            var listingType = String(item.listingType || item.ListingType || '').toLowerCase();
+            if (self.selectedType === 'sale' && !(listingType.indexOf('sale') !== -1 || listingType.indexOf('بيع') !== -1)) return false;
+            if (self.selectedType === 'rent' && !(listingType.indexOf('rent') !== -1 || listingType.indexOf('إيجار') !== -1 || listingType.indexOf('ايجار') !== -1)) return false;
 
             return true;
           });
         }
       },
       methods: {
-        fetchProperties() {
+        fetchProperties: function() {
+          var self = this;
           this.loading = true;
-          fetch(this.webAppUrl, { redirect: 'follow' })
-            .then(res => res.json())
-            .then(data => {
-              this.properties = (data || []).map(p => ({ ...p, activeImgIndex: 0 }));
-              this.loading = false;
+          fetch(this.webAppUrl)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+              self.properties = (data || []).map(function(p) { 
+                return Object.assign({}, p, { activeImgIndex: 0 }); 
+              });
+              self.loading = false;
             })
-            .catch(err => {
+            .catch(function(err) {
               console.error('Error fetching properties:', err);
-              this.loading = false;
+              self.loading = false;
             });
         },
-        openModal(item) {
+        formatPrice: function(val) {
+          var num = Number(val || 0);
+          return isNaN(num) ? '0' : num.toLocaleString('en-US');
+        },
+        openModal: function(item) {
           this.activeItem = item;
         },
-        isSold(item) {
+        isSold: function(item) {
           if (!item) return false;
-          const val = String(item.status || item.Status || '').trim().toLowerCase();
+          var val = String(item.status || item.Status || '').trim().toLowerCase();
           return val !== '' && val !== 'available';
         },
-        getStatusText(item) {
+        getStatusText: function(item) {
           if (!item) return 'تم البيع';
-          const val = String(item.status || item.Status || '').trim().toUpperCase();
+          var val = String(item.status || item.Status || '').trim().toUpperCase();
           return (val === 'AVAILABLE' || val === '') ? 'تم البيع' : val;
         },
-        getContainer(item) {
-          const id = item.id || item.ID;
-          const ref = this.$refs['carousel_' + id];
-          return Array.isArray(ref) ? ref[0] : ref;
-        },
-        nextSlide(item) {
-          const container = this.getContainer(item);
-          if (!container) return;
-          const slideWidth = container.clientWidth;
-          const currentIndex = item.activeImgIndex || 0;
-          const totalSlides = (item.images || []).length;
-          const nextIndex = (currentIndex + 1) % totalSlides;
+        scrollCarousel: function(item, direction) {
+          var refs = this.$refs['carousel_' + item.id];
+          if (!refs || !refs[0]) return;
+          var container = refs[0];
+          var slideWidth = container.clientWidth;
           
-          container.scrollTo({
-            left: container.scrollWidth - (slideWidth * (nextIndex + 1)),
-            behavior: 'smooth'
-          });
-          this.$set(item, 'activeImgIndex', nextIndex);
-        },
-        prevSlide(item) {
-          const container = this.getContainer(item);
-          if (!container) return;
-          const slideWidth = container.clientWidth;
-          const currentIndex = item.activeImgIndex || 0;
-          const totalSlides = (item.images || []).length;
-          const prevIndex = (currentIndex - 1 + totalSlides) % totalSlides;
-
-          container.scrollTo({
-            left: container.scrollWidth - (slideWidth * (prevIndex + 1)),
-            behavior: 'smooth'
-          });
-          this.$set(item, 'activeImgIndex', prevIndex);
-        },
-        onScroll(item, event) {
-          const container = event.target;
-          const slideWidth = container.clientWidth;
-          if (!slideWidth) return;
-          const totalWidth = container.scrollWidth;
-          const scrollLeft = Math.abs(container.scrollLeft);
-          const index = Math.round((totalWidth - scrollLeft - slideWidth) / slideWidth);
-          if (index >= 0 && index < (item.images || []).length) {
-            this.$set(item, 'activeImgIndex', index);
+          // Browser-agnostic RTL scroll offset direction
+          var offset = direction === 'next' ? -slideWidth : slideWidth;
+          
+          if (container.scrollBy) {
+            container.scrollBy({ left: offset, behavior: 'smooth' });
+          } else {
+            container.scrollLeft += offset;
           }
+        },
+        onScroll: function(item, event) {
+          var container = event.target;
+          var index = Math.round(Math.abs(container.scrollLeft) / container.clientWidth);
+          this.$set(item, 'activeImgIndex', index);
         }
       },
-      mounted() {
+      mounted: function() {
         this.fetchProperties();
       }
     });
