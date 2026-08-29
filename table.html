@@ -12,6 +12,7 @@
     body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
     .hero-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
     .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; }
+    .table input.inline-input { width: 80px; text-align: center; border-radius: 6px; }
   </style>
 </head>
 <body>
@@ -35,9 +36,14 @@
             <h1 class="title has-text-white is-size-3 mb-0">
               <span class="material-icons" style="vertical-align: middle;">table_chart</span> إدارة العقارات
             </h1>
-            <a :href="'form.html?code=' + code" class="button is-success">
-              <span class="material-icons ml-1">add</span> إضافة عقار
-            </a>
+            <div>
+              <button @click="saveAll" class="button is-info ml-2" :class="{'is-loading': saving}" :disabled="saving || loading">
+                <span class="material-icons ml-1">save</span> حفظ التغييرات
+              </button>
+              <a :href="'form.html?code=' + code" class="button is-success">
+                <span class="material-icons ml-1">add</span> إضافة عقار
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -45,6 +51,11 @@
       <section class="section py-5">
         <div class="container">
           
+          <div v-if="successMsg" class="notification is-success is-light">
+            <button class="delete" @click="successMsg = ''"></button>
+            {{ successMsg }}
+          </div>
+
           <div v-if="loading" class="has-text-centered py-6">
             <button class="button is-loading is-large is-white" style="border:none;"></button>
           </div>
@@ -59,7 +70,7 @@
                   <th>النوع</th>
                   <th>غرف</th>
                   <th>حمامات</th>
-                  <th>مساحة الأرض</th>
+                  <th>المساحة (م²)</th>
                   <th>الحالة</th>
                   <th>إجراءات</th>
                 </tr>
@@ -70,9 +81,18 @@
                   <td>{{ item.location || item.Location }}</td>
                   <td>OMR {{ Number(item.price || item.Price || 0).toLocaleString() }}</td>
                   <td>{{ item.propertyType || item.PropertyType }}</td>
-                  <td>{{ item.bedrooms || item.Bedrooms || '-' }}</td>
-                  <td>{{ item.bathrooms || item.Bathrooms || '-' }}</td>
-                  <td>{{ (item.landSize || item.LandSize || item.land_size) ? (item.landSize || item.LandSize || item.land_size) + ' م²' : '-' }}</td>
+                  
+                  <!-- Editable Inputs -->
+                  <td>
+                    <input class="input is-small inline-input" type="number" v-model.number="item.bedrooms" min="0">
+                  </td>
+                  <td>
+                    <input class="input is-small inline-input" type="number" v-model.number="item.bathrooms" min="0">
+                  </td>
+                  <td>
+                    <input class="input is-small inline-input" type="number" v-model.number="item.landSize" min="0">
+                  </td>
+
                   <td>
                     <span class="tag" :class="isSold(item) ? 'is-danger' : 'is-success'">
                       {{ isSold(item) ? 'تم البيع' : 'متاح' }}
@@ -111,6 +131,8 @@
         code: '',
         authorized: false,
         loading: true,
+        saving: false,
+        successMsg: '',
         properties: []
       },
       mounted() {
@@ -127,10 +149,16 @@
           fetch(`${this.webAppUrl}?action=read&code=${this.code}`)
             .then(res => res.json())
             .then(data => {
-              this.properties = Array.isArray(data) ? data : [];
+              const list = Array.isArray(data) ? data : [];
+              this.properties = list.map(p => ({
+                ...p,
+                bedrooms: p.bedrooms ?? p.Bedrooms ?? 0,
+                bathrooms: p.bathrooms ?? p.Bathrooms ?? 0,
+                landSize: p.landSize ?? p.LandSize ?? p.land_size ?? 0
+              }));
               this.loading = false;
             })
-            .catch(err => {
+            .catch(() => {
               this.loading = false;
               alert('فشل في جلب البيانات');
             });
@@ -140,37 +168,24 @@
           return val !== '' && val !== 'available';
         },
         toggleStatus(item) {
-          const currentIsSold = this.isSold(item);
-          const newStatus = currentIsSold ? 'AVAILABLE' : 'SOLD';
-          const targetId = item.id || item.ID;
-
-          // Optimistic UI update for speed
-          if (item.status) item.status = newStatus;
-          if (item.Status) item.Status = newStatus;
+          const newStatus = this.isSold(item) ? 'AVAILABLE' : 'SOLD';
+          if (item.status !== undefined) item.status = newStatus;
+          if (item.Status !== undefined) item.Status = newStatus;
 
           fetch(this.webAppUrl, {
             method: 'POST',
             body: JSON.stringify({
               action: 'updateStatus',
               code: this.code,
-              id: targetId,
+              id: item.id || item.ID,
               status: newStatus
             })
-          })
-          .then(res => res.json())
-          .then(res => {
-            if (!res.success) {
-              alert('فشل في تعديل الحالة');
-              this.fetchProperties(); // Revert on fail
-            }
-          })
-          .catch(() => this.fetchProperties());
+          }).catch(() => this.fetchProperties());
         },
         deleteItem(item) {
           if (!confirm('هل أنت تأكد من رغبتك في حذف هذا العقار؟')) return;
           const targetId = item.id || item.ID;
 
-          // Instant local deletion (Ultra fast UI response)
           const backup = [...this.properties];
           this.properties = this.properties.filter(p => (p.id || p.ID) !== targetId);
 
@@ -186,12 +201,45 @@
           .then(res => {
             if (!res.success) {
               alert('فشل في الحذف');
-              this.properties = backup; // Restore on failure
+              this.properties = backup;
             }
           })
           .catch(() => {
             alert('خطأ في الاتصال');
             this.properties = backup;
+          });
+        },
+        saveAll() {
+          this.saving = true;
+          this.successMsg = '';
+
+          const payload = {
+            action: 'updateBatch',
+            code: this.code,
+            items: this.properties.map(p => ({
+              id: p.id || p.ID,
+              bedrooms: p.bedrooms,
+              bathrooms: p.bathrooms,
+              landSize: p.landSize
+            }))
+          };
+
+          fetch(this.webAppUrl, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          })
+          .then(res => res.json())
+          .then(res => {
+            this.saving = false;
+            if (res.success) {
+              this.successMsg = 'تم حفظ جميع التغييرات بنجاح!';
+            } else {
+              alert('حدث خطأ أثناء الحذف/الحفظ');
+            }
+          })
+          .catch(() => {
+            this.saving = false;
+            alert('خطأ في الاتصال بالسيرفر');
           });
         }
       }
