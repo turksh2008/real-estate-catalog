@@ -10,6 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
 
   <style>
+    [v-cloak] { display: none; }
     body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
     .hero-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
     
@@ -70,11 +71,13 @@
       pointer-events: none;
     }
 
-    /* Carousel Styling */
+    /* Cross-Browser Safari/Chrome Compatible Carousel */
     .carousel-wrapper { 
       position: relative; 
       overflow: hidden; 
       background-color: #0f172a;
+      width: 100%;
+      min-height: 230px;
     }
     .carousel-container {
       display: flex;
@@ -82,10 +85,13 @@
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
+      scroll-behavior: smooth;
+      width: 100%;
     }
     .carousel-container::-webkit-scrollbar { display: none; }
     .carousel-slide {
       flex: 0 0 100%;
+      width: 100%;
       scroll-snap-align: start;
       position: relative;
     }
@@ -112,6 +118,7 @@
       gap: 4px;
       z-index: 20;
       pointer-events: none;
+      -webkit-backdrop-filter: blur(4px);
       backdrop-filter: blur(4px);
     }
 
@@ -203,7 +210,6 @@
       color: #dc2626 !important;
     }
 
-    /* Custom Filter Controls Styling */
     .filter-card {
       background: #ffffff;
       border-radius: 12px;
@@ -218,7 +224,6 @@
 </head>
 <body>
   <div id="app" v-cloak>
-    <!-- Header Hero Section -->
     <section class="hero hero-bg is-small">
       <div class="hero-body">
         <div class="container">
@@ -230,7 +235,6 @@
               <h2 class="subtitle has-text-grey-light is-size-6 mt-1">تصفح العقارات المتاحة</h2>
             </div>
             
-            <!-- Header WhatsApp Button -->
             <a href="https://wa.me/96894249942" target="_blank" class="button whatsapp-btn is-rounded">
               <span class="material-icons ml-1" style="font-size: 20px;">chat</span>
               <span>تواصل معنا</span>
@@ -240,15 +244,12 @@
       </div>
     </section>
 
-    <!-- Main Content Grid -->
     <section class="section py-5">
       <div class="container">
         
-        <!-- Filter Controls Bar -->
         <div class="filter-card mb-5" v-if="!loading">
           <div class="columns is-vcentered is-mobile is-multiline">
             
-            <!-- Filter by Availability Status -->
             <div class="column is-12-mobile is-6-tablet is-5-desktop">
               <label class="label is-small has-text-grey">الحالة:</label>
               <div class="buttons has-addons filter-tabs mb-0">
@@ -258,7 +259,6 @@
               </div>
             </div>
 
-            <!-- Filter by Listing Type -->
             <div class="column is-12-mobile is-6-tablet is-5-desktop">
               <label class="label is-small has-text-grey">نوع العرض:</label>
               <div class="buttons has-addons filter-tabs mb-0">
@@ -268,7 +268,6 @@
               </div>
             </div>
 
-            <!-- Property Counter -->
             <div class="column is-12-mobile is-12-tablet is-2-desktop has-text-left-desktop">
               <span class="tag is-info is-light is-medium">
                 {{ filteredProperties.length }} عقار
@@ -278,30 +277,25 @@
           </div>
         </div>
 
-        <!-- Loading Spinner -->
         <div v-if="loading" class="has-text-centered py-6">
           <button class="button is-loading is-large is-white" style="border:none;"></button>
           <p class="has-text-grey mt-2">جاري تحميل العقارات...</p>
         </div>
 
-        <!-- Empty State Message -->
         <div v-else-if="filteredProperties.length === 0" class="has-text-centered py-6">
           <span class="material-icons has-text-grey-light" style="font-size: 48px;">search_off</span>
           <p class="is-size-5 has-text-grey mt-2">لا توجد عقارات تطابق خيارات التصفية الحالية.</p>
           <button class="button is-small is-light mt-3" @click="selectedStatus = 'all'; selectedType = 'all';">إعادة ضبط التصفية</button>
         </div>
 
-        <!-- Property Grid -->
         <div v-else class="columns is-multiline">
-          <div v-for="item in filteredProperties" :key="item.id" class="column is-12-mobile is-6-tablet is-4-desktop">
+          <div v-for="item in filteredProperties" :key="item.id || item.ID" class="column is-12-mobile is-6-tablet is-4-desktop">
             <div class="property-card" :class="{'is-sold-card': isSold(item)}">
               
-              <!-- Sold Banner -->
               <div class="card-sold-banner" v-if="isSold(item)">
                 {{ getStatusText(item) }}
               </div>
 
-              <!-- Carousel -->
               <div class="carousel-wrapper">
                 <div v-if="item.images && item.images.length > 1" class="swipe-badge">
                   <span class="material-icons" style="font-size: 14px;">swipe</span>
@@ -312,7 +306,7 @@
                   <span class="material-icons" style="font-size: 18px;">chevron_right</span>
                 </button>
 
-                <div class="carousel-container" :ref="'carousel_' + item.id" @scroll="onScroll(item, $event)">
+                <div class="carousel-container" :ref="'carousel_' + (item.id || item.ID)" @scroll="onScroll(item, $event)">
                   <div v-for="(img, idx) in item.images" :key="idx" class="carousel-slide" @click="openModal(item)" style="cursor: pointer;">
                     <img :src="img || 'https://via.placeholder.com/400x230?text=No+Image'" loading="lazy" alt="Property Image">
                   </div>
@@ -327,12 +321,11 @@
                 </div>
               </div>
 
-              <!-- Content Box -->
               <div class="card-content-box" @click="openModal(item)" style="cursor: pointer;">
                 <div>
                   <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
                     <span class="tag is-rounded has-text-weight-bold" :class="isSold(item) ? 'is-danger' : 'is-info is-light'">
-                      {{ isSold(item) ? getStatusText(item) : (item.listingType || item.ListingType) }}
+                      {{ isSold(item) ? getStatusText(item) : (item.listingType || item.ListingType || 'للبيع') }}
                     </span>
                     <p class="title is-4 has-text-primary mb-0" :class="{'strike-price': isSold(item)}">
                       OMR {{Number(item.price || item.Price || 0).toLocaleString()}}
@@ -355,8 +348,8 @@
                     <div class="spec-item" v-if="(item.bathrooms || item.Bathrooms) && (item.propertyType || item.PropertyType) !== 'Land'">
                       <span class="material-icons" style="font-size: 16px;">bathtub</span> {{item.bathrooms || item.Bathrooms}} حمام
                     </div>
-                    <div class="spec-item" v-if="item.landSize || item.LandSize">
-                      <span class="material-icons" style="font-size: 16px;">square_foot</span> {{item.landSize || item.LandSize}} م²
+                    <div class="spec-item" v-if="item.landSize || item.LandSize || item.land_size">
+                      <span class="material-icons" style="font-size: 16px;">square_foot</span> {{item.landSize || item.LandSize || item.land_size}} م²
                     </div>
                   </div>
                 </div>
@@ -368,7 +361,6 @@
       </div>
     </section>
 
-    <!-- Modal Detail View -->
     <div class="modal" :class="{'is-active': activeItem}">
       <div class="modal-background" @click="activeItem = null"></div>
       <div class="modal-card" v-if="activeItem" style="max-width: 700px;">
@@ -395,15 +387,14 @@
               <div class="spec-item" v-if="(activeItem.bathrooms || activeItem.Bathrooms) && (activeItem.propertyType || activeItem.PropertyType) !== 'Land'">
                 <span class="material-icons" style="font-size: 18px;">bathtub</span> {{activeItem.bathrooms || activeItem.Bathrooms}} حمام
               </div>
-              <div class="spec-item" v-if="activeItem.landSize || activeItem.LandSize">
-                <span class="material-icons" style="font-size: 18px;">square_foot</span> {{activeItem.landSize || activeItem.LandSize}} م²
+              <div class="spec-item" v-if="activeItem.landSize || activeItem.LandSize || activeItem.land_size">
+                <span class="material-icons" style="font-size: 18px;">square_foot</span> {{activeItem.landSize || activeItem.LandSize || activeItem.land_size}} م²
               </div>
             </div>
 
             <p><strong>الوصف:</strong></p>
             <p style="white-space: pre-line;">{{activeItem.description || activeItem.Description}}</p>
             
-            <!-- Modal WhatsApp Action -->
             <div class="mt-5">
               <a :href="'https://wa.me/96894249942?text=' + encodeURIComponent('مرحباً، أود الاستفسار عن: ' + (activeItem.title || activeItem.Title))" target="_blank" class="button whatsapp-btn is-fullwidth">
                 <span class="material-icons ml-1">chat</span> تواصل معنا عبر واتساب
@@ -423,19 +414,17 @@
         properties: [],
         activeItem: null,
         loading: true,
-        selectedStatus: 'all', // 'all', 'available', 'sold'
-        selectedType: 'all'     // 'all', 'sale', 'rent'
+        selectedStatus: 'all',
+        selectedType: 'all'
       },
       computed: {
         filteredProperties() {
           return this.properties.filter(item => {
             const isSoldItem = this.isSold(item);
             
-            // Status Filtering
             if (this.selectedStatus === 'available' && isSoldItem) return false;
             if (this.selectedStatus === 'sold' && !isSoldItem) return false;
 
-            // Listing Type Filtering
             const listingType = String(item.listingType || item.ListingType || '').toLowerCase();
             if (this.selectedType === 'sale' && !(listingType.includes('sale') || listingType.includes('بيع'))) return false;
             if (this.selectedType === 'rent' && !(listingType.includes('rent') || listingType.includes('إيجار') || listingType.includes('ايجار'))) return false;
@@ -444,63 +433,82 @@
           });
         }
       },
-     methods: {
-  fetchProperties() {
-    this.loading = true;
-    // redirect: 'follow' ensures Safari handles Google Apps Script redirects correctly
-    fetch(this.webAppUrl, { redirect: 'follow' })
-      .then(res => res.json())
-      .then(data => {
-        this.properties = (data || []).map(p => ({ ...p, activeImgIndex: 0 }));
-        this.loading = false;
-      })
-      .catch(err => {
-        console.error('Error fetching properties:', err);
-        this.loading = false;
-      });
-  },
-  openModal(item) {
-    this.activeItem = item;
-  },
-  isSold(item) {
-    if (!item) return false;
-    const val = String(item.status || item.Status || '').trim().toLowerCase();
-    return val !== '' && val !== 'available';
-  },
-  getStatusText(item) {
-    if (!item) return 'تم البيع';
-    const val = String(item.status || item.Status || '').trim().toUpperCase();
-    return (val === 'AVAILABLE' || val === '') ? 'تم البيع' : val;
-  },
-  nextSlide(item) {
-    const container = this.$refs['carousel_' + item.id][0];
-    if (!container) return;
-    // Cross-browser RTL smooth scroll forward
-    const scrollAmount = container.clientWidth;
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    
-    container.scrollBy({ 
-      left: isSafari ? scrollAmount : -scrollAmount, 
-      behavior: 'smooth' 
-    });
-  },
-  prevSlide(item) {
-    const container = this.$refs['carousel_' + item.id][0];
-    if (!container) return;
-    // Cross-browser RTL smooth scroll backward
-    const scrollAmount = container.clientWidth;
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      methods: {
+        fetchProperties() {
+          this.loading = true;
+          fetch(this.webAppUrl, { redirect: 'follow' })
+            .then(res => res.json())
+            .then(data => {
+              this.properties = (data || []).map(p => ({ ...p, activeImgIndex: 0 }));
+              this.loading = false;
+            })
+            .catch(err => {
+              console.error('Error fetching properties:', err);
+              this.loading = false;
+            });
+        },
+        openModal(item) {
+          this.activeItem = item;
+        },
+        isSold(item) {
+          if (!item) return false;
+          const val = String(item.status || item.Status || '').trim().toLowerCase();
+          return val !== '' && val !== 'available';
+        },
+        getStatusText(item) {
+          if (!item) return 'تم البيع';
+          const val = String(item.status || item.Status || '').trim().toUpperCase();
+          return (val === 'AVAILABLE' || val === '') ? 'تم البيع' : val;
+        },
+        getContainer(item) {
+          const id = item.id || item.ID;
+          const ref = this.$refs['carousel_' + id];
+          return Array.isArray(ref) ? ref[0] : ref;
+        },
+        nextSlide(item) {
+          const container = this.getContainer(item);
+          if (!container) return;
+          const slideWidth = container.clientWidth;
+          const currentIndex = item.activeImgIndex || 0;
+          const totalSlides = (item.images || []).length;
+          const nextIndex = (currentIndex + 1) % totalSlides;
+          
+          container.scrollTo({
+            left: container.scrollWidth - (slideWidth * (nextIndex + 1)),
+            behavior: 'smooth'
+          });
+          this.$set(item, 'activeImgIndex', nextIndex);
+        },
+        prevSlide(item) {
+          const container = this.getContainer(item);
+          if (!container) return;
+          const slideWidth = container.clientWidth;
+          const currentIndex = item.activeImgIndex || 0;
+          const totalSlides = (item.images || []).length;
+          const prevIndex = (currentIndex - 1 + totalSlides) % totalSlides;
 
-    container.scrollBy({ 
-      left: isSafari ? -scrollAmount : scrollAmount, 
-      behavior: 'smooth' 
+          container.scrollTo({
+            left: container.scrollWidth - (slideWidth * (prevIndex + 1)),
+            behavior: 'smooth'
+          });
+          this.$set(item, 'activeImgIndex', prevIndex);
+        },
+        onScroll(item, event) {
+          const container = event.target;
+          const slideWidth = container.clientWidth;
+          if (!slideWidth) return;
+          const totalWidth = container.scrollWidth;
+          const scrollLeft = Math.abs(container.scrollLeft);
+          const index = Math.round((totalWidth - scrollLeft - slideWidth) / slideWidth);
+          if (index >= 0 && index < (item.images || []).length) {
+            this.$set(item, 'activeImgIndex', index);
+          }
+        }
+      },
+      mounted() {
+        this.fetchProperties();
+      }
     });
-  },
-  onScroll(item, event) {
-    const container = event.target;
-    // Normalizing scroll position calculation for WebKit/Safari
-    const scrollPos = Math.abs(container.scrollLeft);
-    const index = Math.round(scrollPos / container.clientWidth);
-    this.$set(item, 'activeImgIndex', index);
-  }
-}
+  </script>
+</body>
+</html>
