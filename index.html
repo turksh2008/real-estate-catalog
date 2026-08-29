@@ -16,6 +16,7 @@
     .property-card { border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; }
     .table-container { background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
     .form-container { background: #fff; padding: 2rem; border-radius: 12px; max-width: 700px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .auth-box { background: #fff; padding: 2rem; border-radius: 12px; max-width: 400px; margin: 3rem auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
@@ -45,13 +46,13 @@
                 </a>
               </li>
               <li :class="{'is-active': activeTab === 'table'}">
-                <a @click="activeTab = 'table'">
-                  <span class="material-icons ml-1">table_chart</span> الجدول (Table)
+                <a @click="openProtectedTab('table')">
+                  <span class="material-icons ml-1">lock</span> الجدول (Table)
                 </a>
               </li>
               <li :class="{'is-active': activeTab === 'form'}">
-                <a @click="activeTab = 'form'">
-                  <span class="material-icons ml-1">add_circle</span> إضافة عقار (Add Form)
+                <a @click="openProtectedTab('form')">
+                  <span class="material-icons ml-1">lock</span> إضافة عقار (Add Form)
                 </a>
               </li>
             </ul>
@@ -64,14 +65,25 @@
     <section class="section py-5">
       <div class="container">
 
-        <!-- Loading Spinner -->
-        <div v-if="loading" class="has-text-centered py-6">
-          <button class="button is-loading is-large is-white" style="border:none;"></button>
-          <p class="has-text-grey mt-2">جاري التحميل...</p>
+        <!-- Passcode Entry Dialog (If access denied) -->
+        <div v-if="requiresAuth" class="auth-box has-text-centered">
+          <span class="material-icons has-text-warning" style="font-size: 48px;">lock</span>
+          <h3 class="title is-5 mt-2">قسم محمي كـ Admin</h3>
+          <p class="subtitle is-6 has-text-grey mb-4">الرجاء إدخال الرمز السري للوصول</p>
+          
+          <div class="field">
+            <div class="control">
+              <input class="input has-text-centered" type="password" v-model="passcodeInput" placeholder="****" @keyup.enter="verifyCode">
+            </div>
+          </div>
+          <p v-if="authError" class="has-text-danger help mb-3">الرمز السري غير صحيح</p>
+          
+          <button class="button is-dark is-fullwidth" @click="verifyCode">دخول</button>
         </div>
 
+        <!-- Normal Views (When Authorized or on Public Catalog) -->
         <template v-else>
-          <!-- 1. CATALOG VIEW -->
+          <!-- 1. CATALOG VIEW (Public Access) -->
           <div v-if="activeTab === 'catalog'" class="columns is-multiline">
             <div v-for="item in properties" :key="item.id" class="column is-12-mobile is-6-tablet is-4-desktop">
               <div class="property-card p-4">
@@ -82,7 +94,7 @@
             </div>
           </div>
 
-          <!-- 2. TABLE VIEW -->
+          <!-- 2. TABLE VIEW (Protected) -->
           <div v-if="activeTab === 'table'" class="table-container">
             <h2 class="title is-4 mb-4">قائمة العقارات (Listings Table)</h2>
             <div class="table-container">
@@ -115,7 +127,7 @@
             </div>
           </div>
 
-          <!-- 3. ADD PROPERTY FORM VIEW -->
+          <!-- 3. ADD PROPERTY FORM VIEW (Protected) -->
           <div v-if="activeTab === 'form'" class="form-container">
             <h2 class="title is-4 mb-4">إضافة عقار جديد (Add New Property)</h2>
             <form @submit.prevent="submitForm">
@@ -159,9 +171,9 @@
               </div>
 
               <div class="field">
-                <label class="label">روابط الصور (Image URLs - Comma separated)</label>
+                <label class="label">روابط الصور (Image URLs)</label>
                 <div class="control">
-                  <textarea class="textarea" v-model="formData.images" rows="2" placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"></textarea>
+                  <textarea class="textarea" v-model="formData.images" rows="2"></textarea>
                 </div>
               </div>
 
@@ -187,32 +199,50 @@
       el: '#app',
       data: {
         webAppUrl: 'https://script.google.com/macros/s/AKfycbz0QPRz1P_Q_pNHLS3fSlcLg_SvWAbWpIXLYnvgTq2bHAUkA0r0ImVwbb8vpVUXRlI8CQ/exec',
+        secretCode: '9424', // Change your secret pass code here!
         activeTab: 'catalog',
+        targetTab: '',
+        isAuthorized: false,
+        requiresAuth: false,
+        passcodeInput: '',
+        authError: false,
         properties: [],
-        loading: true,
         submitting: false,
-        formData: {
-          title: '',
-          propertyType: 'Villa',
-          price: '',
-          location: '',
-          images: '',
-          description: ''
-        }
+        formData: { title: '', propertyType: 'Villa', price: '', location: '', images: '', description: '' }
       },
       methods: {
+        checkUrlSecret() {
+          // Checks if secret code is in link: ?code=9424 or ?secret=9424
+          const urlParams = new URLSearchParams(window.location.search);
+          const codeInUrl = urlParams.get('code') || urlParams.get('secret');
+          if (codeInUrl === this.secretCode) {
+            this.isAuthorized = true;
+          }
+        },
+        openProtectedTab(tabName) {
+          if (this.isAuthorized) {
+            this.activeTab = tabName;
+            this.requiresAuth = false;
+          } else {
+            this.targetTab = tabName;
+            this.requiresAuth = true;
+          }
+        },
+        verifyCode() {
+          if (this.passcodeInput === this.secretCode) {
+            this.isAuthorized = true;
+            this.requiresAuth = false;
+            this.authError = false;
+            this.activeTab = this.targetTab || 'table';
+          } else {
+            this.authError = true;
+          }
+        },
         fetchProperties() {
-          this.loading = true;
           fetch(this.webAppUrl)
             .then(res => res.json())
-            .then(data => {
-              this.properties = data || [];
-              this.loading = false;
-            })
-            .catch(err => {
-              console.error('Fetch error:', err);
-              this.loading = false;
-            });
+            .then(data => { this.properties = data || []; })
+            .catch(err => console.error(err));
         },
         submitForm() {
           this.submitting = true;
@@ -221,9 +251,9 @@
             body: JSON.stringify(this.formData)
           })
           .then(res => res.json())
-          .then(res => {
+          .then(() => {
             this.submitting = false;
-            alert('تمت إضافة العقار بنجاح!');
+            alert('تم الحفظ بنجاح!');
             this.formData = { title: '', propertyType: 'Villa', price: '', location: '', images: '', description: '' };
             this.fetchProperties();
             this.activeTab = 'table';
@@ -231,11 +261,11 @@
           .catch(err => {
             this.submitting = false;
             alert('حدث خطأ أثناء الحفظ');
-            console.error(err);
           });
         }
       },
       mounted() {
+        this.checkUrlSecret();
         this.fetchProperties();
       }
     });
