@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة إدارة العقارات</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <style>
+    [v-cloak] { display: none; }
+    body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+    .hero-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+    .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div id="app" v-cloak>
+    <section v-if="!authorized" class="hero is-fullheight is-danger is-light">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <span class="material-icons has-text-danger" style="font-size: 64px;">lock</span>
+          <h1 class="title mt-3">غير مصرح بالوصول</h1>
+          <h2 class="subtitle">يرجى استخدام الرابط الصحيح المتضمن رمز السر (مثال: ?code=SECRET123)</h2>
+        </div>
+      </div>
+    </section>
+
+    <div v-else>
+      <section class="hero hero-bg is-small">
+        <div class="hero-body">
+          <div class="container is-flex is-justify-content-space-between is-align-items-center">
+            <h1 class="title has-text-white is-size-3 mb-0">
+              <span class="material-icons" style="vertical-align: middle;">table_chart</span> إدارة العقارات
+            </h1>
+            <a :href="'form.html?code=' + code" class="button is-success">
+              <span class="material-icons ml-1">add</span> إضافة عقار
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section py-5">
+        <div class="container">
+          
+          <div v-if="loading" class="has-text-centered py-6">
+            <button class="button is-loading is-large is-white" style="border:none;"></button>
+          </div>
+
+          <div v-else class="table-container p-4">
+            <table class="table is-fullwidth is-striped is-hoverable">
+              <thead>
+                <tr>
+                  <th>العنوان</th>
+                  <th>الموقع</th>
+                  <th>السعر</th>
+                  <th>النوع</th>
+                  <th>الحالة</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in properties" :key="item.id || item.ID">
+                  <td><strong>{{ item.title || item.Title }}</strong></td>
+                  <td>{{ item.location || item.Location }}</td>
+                  <td>OMR {{ Number(item.price || item.Price || 0).toLocaleString() }}</td>
+                  <td>{{ item.propertyType || item.PropertyType }}</td>
+                  <td>
+                    <span class="tag" :class="isSold(item) ? 'is-danger' : 'is-success'">
+                      {{ item.status || item.Status }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="buttons">
+                      <button @click="toggleStatus(item)" class="button is-small is-info is-light">
+                        {{ isSold(item) ? 'تغيير إلى متاح' : 'تغيير إلى تم البيع' }}
+                      </button>
+                      <button @click="deleteItem(item)" class="button is-small is-danger is-light">
+                        <span class="material-icons" style="font-size: 16px;">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbz0QPRz1P_Q_pNHLS3fSlcLg_SvWAbWpIXLYnvgTq2bHAUkA0r0ImVwbb8vpVUXRlI8CQ/exec',
+        code: '',
+        authorized: false,
+        loading: true,
+        properties: []
+      },
+      mounted() {
+        const urlParams = new URLSearchParams(window.location.search);
+        this.code = urlParams.get('code') || '';
+        if (this.code) {
+          this.authorized = true;
+          this.fetchProperties();
+        }
+      },
+      methods: {
+        fetchProperties() {
+          this.loading = true;
+          fetch(`${this.webAppUrl}?action=read&code=${this.code}`)
+            .then(res => res.json())
+            .then(data => {
+              this.properties = data;
+              this.loading = false;
+            })
+            .catch(err => {
+              this.loading = false;
+              alert('فشل في جلب البيانات');
+            });
+        },
+        isSold(item) {
+          const val = String(item.status || item.Status || '').trim().toLowerCase();
+          return val !== '' && val !== 'available';
+        },
+        toggleStatus(item) {
+          const newStatus = this.isSold(item) ? 'AVAILABLE' : 'SOLD';
+          const targetId = item.id || item.ID;
+          
+          fetch(this.webAppUrl, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'updateStatus',
+              code: this.code,
+              id: targetId,
+              status: newStatus
+            })
+          })
+          .then(res => res.json())
+          .then(res => {
+            if(res.success) {
+              this.fetchProperties();
+            } else {
+              alert('فشل في تعديل الحالة');
+            }
+          });
+        },
+        deleteItem(item) {
+          if (!confirm('هل أنت تأكد من رغبتك في حذف هذا العقار؟')) return;
+          const targetId = item.id || item.ID;
+
+          fetch(this.webAppUrl, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'delete',
+              code: this.code,
+              id: targetId
+            })
+          })
+          .then(res => res.json())
+          .then(res => {
+            if(res.success) {
+              this.fetchProperties();
+            } else {
+              alert('فشل في الحذف');
+            }
+          });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
