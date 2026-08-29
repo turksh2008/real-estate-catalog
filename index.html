@@ -202,6 +202,18 @@
       text-decoration: line-through;
       color: #dc2626 !important;
     }
+
+    /* Custom Filter Controls Styling */
+    .filter-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .filter-tabs .button {
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -232,15 +244,56 @@
     <section class="section py-5">
       <div class="container">
         
+        <!-- Filter Controls Bar -->
+        <div class="filter-card mb-5" v-if="!loading">
+          <div class="columns is-vcentered is-mobile is-multiline">
+            
+            <!-- Filter by Availability Status -->
+            <div class="column is-12-mobile is-6-tablet is-5-desktop">
+              <label class="label is-small has-text-grey">الحالة:</label>
+              <div class="buttons has-addons filter-tabs mb-0">
+                <button class="button is-small" :class="{'is-dark': selectedStatus === 'all'}" @click="selectedStatus = 'all'">الكل</button>
+                <button class="button is-small" :class="{'is-dark': selectedStatus === 'available'}" @click="selectedStatus = 'available'">المتاحة فقط</button>
+                <button class="button is-small" :class="{'is-dark': selectedStatus === 'sold'}" @click="selectedStatus = 'sold'">المباعة / المؤجرة</button>
+              </div>
+            </div>
+
+            <!-- Filter by Listing Type -->
+            <div class="column is-12-mobile is-6-tablet is-5-desktop">
+              <label class="label is-small has-text-grey">نوع العرض:</label>
+              <div class="buttons has-addons filter-tabs mb-0">
+                <button class="button is-small" :class="{'is-dark': selectedType === 'all'}" @click="selectedType = 'all'">الكل</button>
+                <button class="button is-small" :class="{'is-dark': selectedType === 'sale'}" @click="selectedType = 'sale'">للبيع</button>
+                <button class="button is-small" :class="{'is-dark': selectedType === 'rent'}" @click="selectedType = 'rent'">للإيجار</button>
+              </div>
+            </div>
+
+            <!-- Property Counter -->
+            <div class="column is-12-mobile is-12-tablet is-2-desktop has-text-left-desktop">
+              <span class="tag is-info is-light is-medium">
+                {{ filteredProperties.length }} عقار
+              </span>
+            </div>
+
+          </div>
+        </div>
+
         <!-- Loading Spinner -->
         <div v-if="loading" class="has-text-centered py-6">
           <button class="button is-loading is-large is-white" style="border:none;"></button>
           <p class="has-text-grey mt-2">جاري تحميل العقارات...</p>
         </div>
 
+        <!-- Empty State Message -->
+        <div v-else-if="filteredProperties.length === 0" class="has-text-centered py-6">
+          <span class="material-icons has-text-grey-light" style="font-size: 48px;">search_off</span>
+          <p class="is-size-5 has-text-grey mt-2">لا توجد عقارات تطابق خيارات التصفية الحالية.</p>
+          <button class="button is-small is-light mt-3" @click="selectedStatus = 'all'; selectedType = 'all';">إعادة ضبط التصفية</button>
+        </div>
+
         <!-- Property Grid -->
         <div v-else class="columns is-multiline">
-          <div v-for="item in properties" :key="item.id" class="column is-12-mobile is-6-tablet is-4-desktop">
+          <div v-for="item in filteredProperties" :key="item.id" class="column is-12-mobile is-6-tablet is-4-desktop">
             <div class="property-card" :class="{'is-sold-card': isSold(item)}">
               
               <!-- Sold Banner -->
@@ -366,11 +419,30 @@
     new Vue({
       el: '#app',
       data: {
-        // REPLACE THIS URL WITH YOUR APPS SCRIPT WEB APP EXEC URL
         webAppUrl: 'https://script.google.com/macros/s/AKfycbz0QPRz1P_Q_pNHLS3fSlcLg_SvWAbWpIXLYnvgTq2bHAUkA0r0ImVwbb8vpVUXRlI8CQ/exec',
         properties: [],
         activeItem: null,
-        loading: true
+        loading: true,
+        selectedStatus: 'all', // 'all', 'available', 'sold'
+        selectedType: 'all'     // 'all', 'sale', 'rent'
+      },
+      computed: {
+        filteredProperties() {
+          return this.properties.filter(item => {
+            const isSoldItem = this.isSold(item);
+            
+            // Status Filtering
+            if (this.selectedStatus === 'available' && isSoldItem) return false;
+            if (this.selectedStatus === 'sold' && !isSoldItem) return false;
+
+            // Listing Type Filtering
+            const listingType = String(item.listingType || item.ListingType || '').toLowerCase();
+            if (this.selectedType === 'sale' && !(listingType.includes('sale') || listingType.includes('بيع'))) return false;
+            if (this.selectedType === 'rent' && !(listingType.includes('rent') || listingType.includes('إيجار') || listingType.includes('ايجار'))) return false;
+
+            return true;
+          });
+        }
       },
       methods: {
         fetchProperties() {
