@@ -11,11 +11,12 @@
     [v-cloak] { display: none; }
     body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
     .hero-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
-    .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow-x: auto; }
   </style>
 </head>
 <body>
   <div id="app" v-cloak>
+    <!-- Access Control Screen -->
     <section v-if="!authorized" class="hero is-fullheight is-danger is-light">
       <div class="hero-body">
         <div class="container has-text-centered">
@@ -26,6 +27,7 @@
       </div>
     </section>
 
+    <!-- Main Dashboard Screen -->
     <div v-else>
       <section class="hero hero-bg is-small">
         <div class="hero-body">
@@ -55,6 +57,9 @@
                   <th>الموقع</th>
                   <th>السعر</th>
                   <th>النوع</th>
+                  <th>غرف</th>
+                  <th>حمامات</th>
+                  <th>مساحة الأرض</th>
                   <th>الحالة</th>
                   <th>إجراءات</th>
                 </tr>
@@ -65,9 +70,12 @@
                   <td>{{ item.location || item.Location }}</td>
                   <td>OMR {{ Number(item.price || item.Price || 0).toLocaleString() }}</td>
                   <td>{{ item.propertyType || item.PropertyType }}</td>
+                  <td>{{ item.bedrooms || item.Bedrooms || '-' }}</td>
+                  <td>{{ item.bathrooms || item.Bathrooms || '-' }}</td>
+                  <td>{{ (item.landSize || item.LandSize || item.land_size) ? (item.landSize || item.LandSize || item.land_size) + ' م²' : '-' }}</td>
                   <td>
                     <span class="tag" :class="isSold(item) ? 'is-danger' : 'is-success'">
-                      {{ item.status || item.Status }}
+                      {{ isSold(item) ? 'تم البيع' : 'متاح' }}
                     </span>
                   </td>
                   <td>
@@ -79,6 +87,11 @@
                         <span class="material-icons" style="font-size: 16px;">delete</span>
                       </button>
                     </div>
+                  </td>
+                </tr>
+                <tr v-if="properties.length === 0">
+                  <td colspan="9" class="has-text-centered py-5 has-text-grey">
+                    لا توجد عقارات مضافة حالياً.
                   </td>
                 </tr>
               </tbody>
@@ -114,7 +127,7 @@
           fetch(`${this.webAppUrl}?action=read&code=${this.code}`)
             .then(res => res.json())
             .then(data => {
-              this.properties = data;
+              this.properties = Array.isArray(data) ? data : [];
               this.loading = false;
             })
             .catch(err => {
@@ -127,9 +140,14 @@
           return val !== '' && val !== 'available';
         },
         toggleStatus(item) {
-          const newStatus = this.isSold(item) ? 'AVAILABLE' : 'SOLD';
+          const currentIsSold = this.isSold(item);
+          const newStatus = currentIsSold ? 'AVAILABLE' : 'SOLD';
           const targetId = item.id || item.ID;
-          
+
+          // Optimistic UI update for speed
+          if (item.status) item.status = newStatus;
+          if (item.Status) item.Status = newStatus;
+
           fetch(this.webAppUrl, {
             method: 'POST',
             body: JSON.stringify({
@@ -141,16 +159,20 @@
           })
           .then(res => res.json())
           .then(res => {
-            if(res.success) {
-              this.fetchProperties();
-            } else {
+            if (!res.success) {
               alert('فشل في تعديل الحالة');
+              this.fetchProperties(); // Revert on fail
             }
-          });
+          })
+          .catch(() => this.fetchProperties());
         },
         deleteItem(item) {
           if (!confirm('هل أنت تأكد من رغبتك في حذف هذا العقار؟')) return;
           const targetId = item.id || item.ID;
+
+          // Instant local deletion (Ultra fast UI response)
+          const backup = [...this.properties];
+          this.properties = this.properties.filter(p => (p.id || p.ID) !== targetId);
 
           fetch(this.webAppUrl, {
             method: 'POST',
@@ -162,11 +184,14 @@
           })
           .then(res => res.json())
           .then(res => {
-            if(res.success) {
-              this.fetchProperties();
-            } else {
+            if (!res.success) {
               alert('فشل في الحذف');
+              this.properties = backup; // Restore on failure
             }
+          })
+          .catch(() => {
+            alert('خطأ في الاتصال');
+            this.properties = backup;
           });
         }
       }
