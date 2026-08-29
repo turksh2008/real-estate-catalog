@@ -11,12 +11,42 @@
     [v-cloak] { display: none; }
     body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
     .hero-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
-    .form-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-    .preview-img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1; }
+    .form-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; }
+    
+    /* Image Preview Styling */
+    .preview-container {
+      position: relative;
+      display: inline-block;
+    }
+    .preview-img { 
+      width: 100px; 
+      height: 100px; 
+      object-fit: cover; 
+      border-radius: 8px; 
+      border: 1px solid #cbd5e1; 
+      display: block;
+    }
+    .remove-img-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
   </style>
 </head>
 <body>
   <div id="app" v-cloak>
+    <!-- Unauthorized Access Screen -->
     <section v-if="!authorized" class="hero is-fullheight is-danger is-light">
       <div class="hero-body">
         <div class="container has-text-centered">
@@ -27,6 +57,7 @@
       </div>
     </section>
 
+    <!-- Main Form Screen -->
     <div v-else>
       <section class="hero hero-bg is-small">
         <div class="hero-body">
@@ -42,6 +73,7 @@
         <div class="container" style="max-width: 800px;">
           <div class="form-card p-5">
             
+            <!-- Alert Messages -->
             <div v-if="successMsg" class="notification is-success is-light">
               <button class="delete" @click="successMsg = ''"></button>
               {{ successMsg }}
@@ -52,6 +84,7 @@
             </div>
 
             <form @submit.prevent="submitForm">
+              <!-- Title -->
               <div class="field">
                 <label class="label">عنوان العقار</label>
                 <div class="control">
@@ -59,6 +92,7 @@
                 </div>
               </div>
 
+              <!-- Price & Location -->
               <div class="columns">
                 <div class="column is-6">
                   <div class="field">
@@ -78,6 +112,7 @@
                 </div>
               </div>
 
+              <!-- Type & Listing -->
               <div class="columns">
                 <div class="column is-6">
                   <div class="field">
@@ -105,6 +140,7 @@
                 </div>
               </div>
 
+              <!-- Bedrooms & Bathrooms (Hidden for Land) -->
               <div class="columns" v-if="form.propertyType !== 'Land'">
                 <div class="column is-6">
                   <div class="field">
@@ -124,6 +160,7 @@
                 </div>
               </div>
 
+              <!-- Land Size -->
               <div class="field">
                 <label class="label">مساحة البناء / الأرض (م²)</label>
                 <div class="control">
@@ -131,6 +168,7 @@
                 </div>
               </div>
 
+              <!-- Description -->
               <div class="field">
                 <label class="label">الوصف الكامل</label>
                 <div class="control">
@@ -138,27 +176,33 @@
                 </div>
               </div>
 
+              <!-- File Upload -->
               <div class="field">
-                <label class="label">صور العقار (يمكنك اختيار أكثر من صورة)</label>
+                <label class="label">صور العقار (يتم ضغط الصور تلقائياً لسرعة الرفع)</label>
                 <div class="file has-name is-fullwidth">
                   <label class="file-label">
-                    <input class="file-input" type="file" multiple accept="image/*" @change="handleFiles">
+                    <input class="file-input" type="file" multiple accept="image/*" @change="handleFiles" :disabled="compressing">
                     <span class="file-cta">
                       <span class="file-icon"><span class="material-icons">cloud_upload</span></span>
-                      <span class="file-label">اختر الصور...</span>
+                      <span class="file-label">{{ compressing ? 'جاري ضغط الصور...' : 'اختر الصور...' }}</span>
                     </span>
                   </label>
                 </div>
               </div>
 
-              <div v-if="imagePreviews.length" class="is-flex is-flex-wrap-wrap gap-2 my-3">
-                <div v-for="(src, idx) in imagePreviews" :key="idx" class="mr-2 mb-2">
+              <!-- Image Previews with Remove Action -->
+              <div v-if="imagePreviews.length" class="is-flex is-flex-wrap-wrap gap-2 my-4">
+                <div v-for="(src, idx) in imagePreviews" :key="idx" class="preview-container ml-3 mb-3">
                   <img :src="src" class="preview-img">
+                  <button type="button" class="remove-img-btn" @click="removeImage(idx)">
+                    <span class="material-icons" style="font-size: 14px;">close</span>
+                  </button>
                 </div>
               </div>
 
+              <!-- Submit Button -->
               <div class="field mt-5">
-                <button type="submit" class="button is-link is-fullwidth" :class="{'is-loading': submitting}">
+                <button type="submit" class="button is-link is-fullwidth" :class="{'is-loading': submitting}" :disabled="compressing || submitting">
                   <span class="material-icons ml-1">send</span> حفظ وإضافة العقار
                 </button>
               </div>
@@ -178,6 +222,7 @@
         code: '',
         authorized: false,
         submitting: false,
+        compressing: false,
         successMsg: '',
         errMsg: '',
         imageFiles: [],
@@ -203,22 +248,64 @@
         }
       },
       methods: {
-        handleFiles(e) {
+        async handleFiles(e) {
           const files = Array.from(e.target.files);
-          this.imageFiles = [];
-          this.imagePreviews = [];
+          if (!files.length) return;
 
-          files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-              this.imagePreviews.push(evt.target.result);
+          this.compressing = true;
+          for (let file of files) {
+            try {
+              const compressedBase64 = await this.compressImage(file, 1200, 0.75);
+              this.imagePreviews.push(compressedBase64);
               this.imageFiles.push({
-                mimeType: file.type,
-                base64: evt.target.result
+                mimeType: 'image/jpeg',
+                base64: compressedBase64
               });
-            };
+            } catch (err) {
+              console.error('Error compressing image:', err);
+            }
+          }
+          this.compressing = false;
+          e.target.value = ''; // Reset input selection
+        },
+        compressImage(file, maxWidth, quality) {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
             reader.readAsDataURL(file);
+            reader.onload = (event) => {
+              const img = new Image();
+              img.src = event.target.result;
+              img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth || height > maxWidth) {
+                  if (width > height) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                  } else {
+                    width = Math.round((width * maxWidth) / height);
+                    height = maxWidth;
+                  }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(dataUrl);
+              };
+              img.onerror = (err) => reject(err);
+            };
+            reader.onerror = (err) => reject(err);
           });
+        },
+        removeImage(idx) {
+          this.imagePreviews.splice(idx, 1);
+          this.imageFiles.splice(idx, 1);
         },
         submitForm() {
           this.submitting = true;
@@ -248,7 +335,7 @@
           })
           .catch(err => {
             this.submitting = false;
-            this.errMsg = 'فشل الاتصال بالسيرفر.';
+            this.errMsg = 'فشل الاتصال بالسيرفر. يرجى التحقق من الشبكة وإعادة المحاولة.';
           });
         },
         resetForm() {
