@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إضافة عقار جديد</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <style>
+    [v-cloak] { display: none; }
+    body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+    .hero-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+    .form-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .preview-img { width: 90px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1; }
+  </style>
+</head>
+<body>
+  <div id="app" v-cloak>
+    <section v-if="!authorized" class="hero is-fullheight is-danger is-light">
+      <div class="hero-body">
+        <div class="container has-text-centered">
+          <span class="material-icons has-text-danger" style="font-size: 64px;">lock</span>
+          <h1 class="title mt-3">غير مصرح بالوصول</h1>
+          <h2 class="subtitle">يرجى كتابة رمز المرور في الرابط للدخول (مثال: ?code=SECRET123)</h2>
+        </div>
+      </div>
+    </section>
+
+    <div v-else>
+      <section class="hero hero-bg is-small">
+        <div class="hero-body">
+          <div class="container">
+            <h1 class="title has-text-white is-size-3">
+              <span class="material-icons" style="vertical-align: middle;">add_business</span> إضافة عقار جديد
+            </h1>
+          </div>
+        </div>
+      </section>
+
+      <section class="section py-5">
+        <div class="container" style="max-width: 800px;">
+          <div class="form-card p-5">
+            
+            <div v-if="successMsg" class="notification is-success is-light">
+              <button class="delete" @click="successMsg = ''"></button>
+              {{ successMsg }}
+            </div>
+            <div v-if="errMsg" class="notification is-danger is-light">
+              <button class="delete" @click="errMsg = ''"></button>
+              {{ errMsg }}
+            </div>
+
+            <form @submit.prevent="submitForm">
+              <div class="field">
+                <label class="label">عنوان العقار</label>
+                <div class="control">
+                  <input class="input" type="text" v-model="form.title" placeholder="مثال: شقة مودرن للبيع في الخوض" required>
+                </div>
+              </div>
+
+              <div class="columns">
+                <div class="column is-6">
+                  <div class="field">
+                    <label class="label">السعر (OMR)</label>
+                    <div class="control">
+                      <input class="input" type="number" v-model.number="form.price" placeholder="50000" required>
+                    </div>
+                  </div>
+                </div>
+                <div class="column is-6">
+                  <div class="field">
+                    <label class="label">الموقع</label>
+                    <div class="control">
+                      <input class="input" type="text" v-model="form.location" placeholder="السيب / الموالح" required>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="columns">
+                <div class="column is-6">
+                  <div class="field">
+                    <label class="label">نوع العقار</label>
+                    <div class="control select is-fullwidth">
+                      <select v-model="form.propertyType">
+                        <option value="Apartment">شقة</option>
+                        <option value="Villa">فيلا</option>
+                        <option value="Land">أرض</option>
+                        <option value="Commercial">تجاري</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="column is-6">
+                  <div class="field">
+                    <label class="label">نوع العرض</label>
+                    <div class="control select is-fullwidth">
+                      <select v-model="form.listingType">
+                        <option value="For Sale">للبيع</option>
+                        <option value="For Rent">للإيجار</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="columns" v-if="form.propertyType !== 'Land'">
+                <div class="column is-6">
+                  <div class="field">
+                    <label class="label">عدد الغرف</label>
+                    <div class="control">
+                      <input class="input" type="number" v-model.number="form.bedrooms" min="0">
+                    </div>
+                  </div>
+                </div>
+                <div class="column is-6">
+                  <div class="field">
+                    <label class="label">عدد دورات المياه</label>
+                    <div class="control">
+                      <input class="input" type="number" v-model.number="form.bathrooms" min="0">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label">مساحة البناء / الأرض (م²)</label>
+                <div class="control">
+                  <input class="input" type="number" v-model.number="form.landSize" placeholder="600">
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label">الوصف الكامل</label>
+                <div class="control">
+                  <textarea class="textarea" v-model="form.description" rows="4" placeholder="تفاصيل العقار..."></textarea>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label">صور العقار (يمكنك اختيار أكثر من صورة)</label>
+                <div class="file has-name is-fullwidth">
+                  <label class="file-label">
+                    <input class="file-input" type="file" multiple accept="image/*" @change="handleFiles">
+                    <span class="file-cta">
+                      <span class="file-icon"><span class="material-icons">cloud_upload</span></span>
+                      <span class="file-label">اختر الصور...</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div v-if="imagePreviews.length" class="is-flex is-flex-wrap-wrap gap-2 my-3">
+                <div v-for="(src, idx) in imagePreviews" :key="idx" class="mr-2 mb-2">
+                  <img :src="src" class="preview-img">
+                </div>
+              </div>
+
+              <div class="field mt-5">
+                <button type="submit" class="button is-link is-fullwidth" :class="{'is-loading': submitting}">
+                  <span class="material-icons ml-1">send</span> حفظ وإضافة العقار
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbz0QPRz1P_Q_pNHLS3fSlcLg_SvWAbWpIXLYnvgTq2bHAUkA0r0ImVwbb8vpVUXRlI8CQ/exec',
+        code: '',
+        authorized: false,
+        submitting: false,
+        successMsg: '',
+        errMsg: '',
+        imageFiles: [],
+        imagePreviews: [],
+        form: {
+          title: '',
+          price: '',
+          location: '',
+          propertyType: 'Apartment',
+          listingType: 'For Sale',
+          bedrooms: 2,
+          bathrooms: 2,
+          landSize: '',
+          status: 'AVAILABLE',
+          description: ''
+        }
+      },
+      mounted() {
+        const urlParams = new URLSearchParams(window.location.search);
+        this.code = urlParams.get('code') || '';
+        if (this.code) {
+          this.authorized = true;
+        }
+      },
+      methods: {
+        handleFiles(e) {
+          const files = Array.from(e.target.files);
+          this.imageFiles = [];
+          this.imagePreviews = [];
+
+          files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              this.imagePreviews.push(evt.target.result);
+              this.imageFiles.push({
+                mimeType: file.type,
+                base64: evt.target.result
+              });
+            };
+            reader.readAsDataURL(file);
+          });
+        },
+        submitForm() {
+          this.submitting = true;
+          this.successMsg = '';
+          this.errMsg = '';
+
+          const payload = {
+            action: 'create',
+            code: this.code,
+            ...this.form,
+            imageFiles: this.imageFiles
+          };
+
+          fetch(this.webAppUrl, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          })
+          .then(res => res.json())
+          .then(res => {
+            this.submitting = false;
+            if (res.success) {
+              this.successMsg = 'تمت إضافة العقار بنجاح!';
+              this.resetForm();
+            } else {
+              this.errMsg = res.error || 'حدث خطأ أثناء حفظ العقار.';
+            }
+          })
+          .catch(err => {
+            this.submitting = false;
+            this.errMsg = 'فشل الاتصال بالسيرفر.';
+          });
+        },
+        resetForm() {
+          this.form = {
+            title: '', price: '', location: '',
+            propertyType: 'Apartment', listingType: 'For Sale',
+            bedrooms: 2, bathrooms: 2, landSize: '', status: 'AVAILABLE', description: ''
+          };
+          this.imageFiles = [];
+          this.imagePreviews = [];
+        }
+      }
+    });
+  </script>
+</body>
+</html>
