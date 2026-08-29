@@ -37,29 +37,76 @@
             </a>
           </div>
 
-          <!-- Navigation Tabs -->
-          <div class="tabs is-toggle is-fullwidth is-small mt-4">
-            <ul>
-              <li :class="{'is-active': activeTab === 'catalog'}">
-                <a @click="activeTab = 'catalog'">
-                  <span class="material-icons ml-1">grid_view</span> المعرض (Catalog)
-                </a>
-              </li>
-              <li :class="{'is-active': activeTab === 'table'}">
-                <a @click="openProtectedTab('table')">
-                  <span class="material-icons ml-1">lock</span> الجدول (Table)
-                </a>
-              </li>
-              <li :class="{'is-active': activeTab === 'form'}">
-                <a @click="openProtectedTab('form')">
-                  <span class="material-icons ml-1">lock</span> إضافة عقار (Add Form)
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
+          <!-- Navigation Header Tabs -->
+<div class="tabs is-centered is-toggle mt-4">
+  <ul>
+    <li :class="{'is-active': activeTab === 'catalog'}"><a @click="activeTab = 'catalog'">المعروضات (Catalog)</a></li>
+    <li :class="{'is-active': activeTab === 'table'}"><a @click="activeTab = 'table'">جدول البيانات (Table)</a></li>
+    <li :class="{'is-active': activeTab === 'form'}"><a @click="activeTab = 'form'">إضافة عقار (Add Property)</a></li>
+  </ul>
+</div>
+
+<!-- Admin Table View -->
+<div v-if="activeTab === 'table'" class="container py-4">
+  <table class="table is-fullwidth is-striped is-hoverable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>العنوان</th>
+        <th>النوع</th>
+        <th>السعر</th>
+        <th>الموقع</th>
+        <th>الحالة</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="item in properties" :key="item.id">
+        <td>{{item.id}}</td>
+        <td>{{item.title}}</td>
+        <td>{{item.propertyType}}</td>
+        <td>{{item.price}} OMR</td>
+        <td>{{item.location}}</td>
+        <td><span class="tag" :class="isSold(item) ? 'is-danger' : 'is-success'">{{getStatusText(item)}}</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Add Property Form View -->
+<div v-if="activeTab === 'form'" class="container py-4" style="max-width: 600px;">
+  <form @submit.prevent="submitNewProperty" class="box">
+    <h3 class="title is-4">إضافة عقار جديد</h3>
+    
+    <div class="field">
+      <label class="label">كود الحماية (Secret Code)</label>
+      <input class="input" type="password" v-model="form.secretCode" required placeholder="Enter Secret Code">
+    </div>
+
+    <div class="field">
+      <label class="label">عنوان العقار</label>
+      <input class="input" type="text" v-model="form.title" required>
+    </div>
+
+    <div class="field">
+      <label class="label">السعر (OMR)</label>
+      <input class="input" type="number" v-model="form.price" required>
+    </div>
+
+    <div class="field">
+      <label class="label">الموقع</label>
+      <input class="input" type="text" v-model="form.location" required>
+    </div>
+
+    <div class="field">
+      <label class="label">رفع صورة</label>
+      <input class="input" type="file" @change="handleFileUpload" accept="image/*">
+      <p v-if="uploadingImage" class="help is-info">جاري رفع الصورة...</p>
+      <p v-if="form.images.length" class="help is-success">تم رفع {{form.images.length}} صورة</p>
+    </div>
+
+    <button class="button is-primary is-fullwidth" :class="{'is-loading': submitting}">حفظ العقار</button>
+  </form>
+</div>
 
     <!-- Main Content Body -->
     <section class="section py-5">
@@ -198,77 +245,81 @@
     new Vue({
       el: '#app',
       data: {
-        webAppUrl: 'https://script.google.com/macros/s/AKfycbz0QPRz1P_Q_pNHLS3fSlcLg_SvWAbWpIXLYnvgTq2bHAUkA0r0ImVwbb8vpVUXRlI8CQ/exec',
-        secretCode: '9424', // Change your secret pass code here!
-        activeTab: 'catalog',
-        targetTab: '',
-        isAuthorized: false,
-        requiresAuth: false,
-        passcodeInput: '',
-        authError: false,
-        properties: [],
-        submitting: false,
-        formData: { title: '', propertyType: 'Villa', price: '', location: '', images: '', description: '' }
-      },
-      methods: {
-        checkUrlSecret() {
-          // Checks if secret code is in link: ?code=9424 or ?secret=9424
-          const urlParams = new URLSearchParams(window.location.search);
-          const codeInUrl = urlParams.get('code') || urlParams.get('secret');
-          if (codeInUrl === this.secretCode) {
-            this.isAuthorized = true;
-          }
-        },
-        openProtectedTab(tabName) {
-          if (this.isAuthorized) {
-            this.activeTab = tabName;
-            this.requiresAuth = false;
-          } else {
-            this.targetTab = tabName;
-            this.requiresAuth = true;
-          }
-        },
-        verifyCode() {
-          if (this.passcodeInput === this.secretCode) {
-            this.isAuthorized = true;
-            this.requiresAuth = false;
-            this.authError = false;
-            this.activeTab = this.targetTab || 'table';
-          } else {
-            this.authError = true;
-          }
-        },
-        fetchProperties() {
-          fetch(this.webAppUrl)
-            .then(res => res.json())
-            .then(data => { this.properties = data || []; })
-            .catch(err => console.error(err));
-        },
-        submitForm() {
-          this.submitting = true;
-          fetch(this.webAppUrl, {
-            method: 'POST',
-            body: JSON.stringify(this.formData)
-          })
-          .then(res => res.json())
-          .then(() => {
-            this.submitting = false;
-            alert('تم الحفظ بنجاح!');
-            this.formData = { title: '', propertyType: 'Villa', price: '', location: '', images: '', description: '' };
-            this.fetchProperties();
-            this.activeTab = 'table';
-          })
-          .catch(err => {
-            this.submitting = false;
-            alert('حدث خطأ أثناء الحفظ');
-          });
+  activeTab: 'catalog',
+  webAppUrl: 'YOUR_APPS_SCRIPT_WEB_APP_URL',
+  submitting: false,
+  uploadingImage: false,
+  form: {
+    secretCode: '',
+    title: '',
+    price: '',
+    location: '',
+    propertyType: 'Residential',
+    listingType: 'Sale',
+    images: []
+  }
+},
+methods: {
+  handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!this.form.secretCode) {
+      alert('الرجاء أدخل كود الحماية أولاً (Please enter secret code first)');
+      return;
+    }
+
+    this.uploadingImage = true;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64Data = e.target.result.split(',')[1];
+      
+      fetch(this.webAppUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'uploadImage',
+          secretCode: this.form.secretCode,
+          fileName: file.name,
+          mimeType: file.type,
+          fileData: base64Data
+        })
+      })
+      .then(res => res.json())
+      .then(res => {
+        this.uploadingImage = false;
+        if (res.status === 'success') {
+          this.form.images.push(res.url);
+          alert('تم رفع الصورة بنجاح!');
+        } else {
+          alert('خطأ: ' + res.message);
         }
-      },
-      mounted() {
-        this.checkUrlSecret();
+      });
+    };
+    reader.readAsDataURL(file);
+  },
+
+  submitNewProperty() {
+    this.submitting = true;
+    fetch(this.webAppUrl, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'addProperty',
+        secretCode: this.form.secretCode,
+        property: this.form
+      })
+    })
+    .then(res => res.json())
+    .then(res => {
+      this.submitting = false;
+      if (res.status === 'success') {
+        alert('تمت إضافة العقار بنجاح');
         this.fetchProperties();
+        this.activeTab = 'catalog';
+      } else {
+        alert('خطأ: ' + res.message);
       }
     });
+  }
+}
   </script>
 </body>
 </html>
