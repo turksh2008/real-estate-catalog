@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+  <style>
+    body { background-color: #f8f9fa; }
+    .hero-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+    
+    /* Property Card Container */
+    .property-card {
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative !important;
+      overflow: hidden !important;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .property-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Grayscale State */
+    .property-card.is-sold-card {
+      filter: grayscale(100%) opacity(0.75) !important;
+      background-color: #f8fafc !important;
+    }
+
+    /* Red Diagonal Banner */
+    .card-sold-banner {
+      position: absolute;
+      top: 25px;
+      right: -40px;
+      transform: rotate(45deg);
+      background-color: #dc2626;
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 45px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+      z-index: 25;
+      pointer-events: none;
+    }
+
+    /* Carousel Styling */
+    .carousel-wrapper { 
+      position: relative; 
+      overflow: hidden; 
+      background-color: #0f172a;
+    }
+    .carousel-container {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .carousel-container::-webkit-scrollbar { display: none; }
+    .carousel-slide {
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      position: relative;
+    }
+    .carousel-slide img {
+      width: 100%;
+      height: 230px;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* SWIPE BADGE & ICON OVERLAY */
+    .swipe-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(15, 23, 42, 0.65);
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 20;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Navigation Arrows */
+    .carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(15, 23, 42, 0.55);
+      color: #ffffff;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 15;
+      transition: background 0.2s ease;
+    }
+    .carousel-arrow:hover {
+      background: rgba(15, 23, 42, 0.85);
+    }
+    .carousel-arrow.left { left: 8px; }
+    .carousel-arrow.right { right: 8px; }
+
+    /* Navigation Dots */
+    .carousel-dots {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 5px;
+      z-index: 15;
+      pointer-events: none;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      transition: all 0.2s ease;
+    }
+    .dot.active {
+      background: #ffffff;
+      width: 14px;
+      border-radius: 4px;
+    }
+
+    .card-content-box {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-grow: 1;
+      gap: 12px;
+    }
+
+    .prop-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 0 !important;
+    }
+
+    .prop-location {
+      font-size: 0.875rem;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 0 !important;
+    }
+
+    .spec-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #475569;
+      font-size: 0.825rem;
+      font-weight: 500;
+      margin-right: 12px;
+    }
+
+    .strike-price {
+      text-decoration: line-through;
+      color: #dc2626 !important;
+    }
+
+    [v-cloak] { display: none; }
+  </style>
+</head>
+<body>
+  <div id="app" v-cloak>
+    <section class="hero hero-bg is-small">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title has-text-white is-size-3">
+            <span class="material-icons" style="vertical-align: middle;">domain</span> عقارتي
+          </h1>
+          <h2 class="subtitle has-text-grey-light is-size-6 mt-1">+968 94249942</h2>
+        </div>
+      </div>
+    </section>
+
+    <section class="section py-5">
+      <div class="container">
+        <!-- Main Categories -->
+        <div class="buttons mb-4">
+          <button class="button is-rounded" :class="selectedCategory === '' ? 'is-dark' : 'is-white'" @click="selectCategory('')">
+            All Listings
+          </button>
+          <button v-for="cat in categories" :key="cat.name" class="button is-rounded" :class="selectedCategory === cat.name ? 'is-dark' : 'is-white'" @click="selectCategory(cat.name)">
+            <span class="material-icons mr-1">{{cat.icon}}</span> {{cat.name}}
+          </button>
+        </div>
+
+        <!-- Property Grid -->
+        <div class="columns is-multiline">
+          <div v-for="item in filteredProperties" :key="item.id" class="column is-12-mobile is-6-tablet is-4-desktop">
+            <div class="property-card" :class="{'is-sold-card': isSold(item)}">
+              
+              <!-- Red Diagonal Banner -->
+              <div class="card-sold-banner" v-if="isSold(item)">
+                {{ getStatusText(item) }}
+              </div>
+
+              <!-- Carousel -->
+              <div class="carousel-wrapper">
+                
+                <!-- SWIPE BADGE & ICON -->
+                <div v-if="item.images && item.images.length > 1" class="swipe-badge">
+                  <span class="material-icons" style="font-size: 14px;">swipe</span>
+                  <span>Swipe</span>
+                </div>
+
+                <!-- Left Arrow -->
+                <button v-if="item.images && item.images.length > 1" class="carousel-arrow left" @click.stop="prevSlide(item)">
+                  <span class="material-icons" style="font-size: 18px;">chevron_left</span>
+                </button>
+
+                <!-- Scroll Container -->
+                <div class="carousel-container" :ref="'carousel_' + item.id" @scroll="onScroll(item, $event)">
+                  <div v-for="(img, idx) in item.images" :key="idx" class="carousel-slide" @click="openModal(item)" style="cursor: pointer;">
+                    <img :src="img || 'https://via.placeholder.com/400x230?text=No+Image'" alt="Property Image">
+                  </div>
+                </div>
+
+                <!-- Right Arrow -->
+                <button v-if="item.images && item.images.length > 1" class="carousel-arrow right" @click.stop="nextSlide(item)">
+                  <span class="material-icons" style="font-size: 18px;">chevron_right</span>
+                </button>
+
+                <!-- Navigation Dots -->
+                <div v-if="item.images && item.images.length > 1" class="carousel-dots">
+                  <span v-for="(img, idx) in item.images" :key="idx" class="dot" :class="{'active': (item.activeImgIndex || 0) === idx}"></span>
+                </div>
+
+              </div>
+
+              <!-- Content Box -->
+              <div class="card-content-box" @click="openModal(item)" style="cursor: pointer;">
+                <div>
+                  <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                    <span class="tag is-rounded has-text-weight-bold" :class="isSold(item) ? 'is-danger' : 'is-info is-light'">
+                      {{ isSold(item) ? getStatusText(item) : item.listingType }}
+                    </span>
+                    <p class="title is-4 has-text-primary mb-0" :class="{'strike-price': isSold(item)}">
+                      OMR {{Number(item.price).toLocaleString()}}
+                    </p>
+                  </div>
+
+                  <h3 class="prop-title mt-2">{{item.title}}</h3>
+                </div>
+
+                <div>
+                  <p class="prop-location">
+                    <span class="material-icons" style="font-size: 16px; color: #0284c7;">place</span>
+                    <span>{{item.location}}</span>
+                  </p>
+
+                  <div class="is-flex is-align-items-center pt-3 mt-3" style="border-top: 1px solid #f1f5f9;">
+                    <div class="spec-item" v-if="item.bedrooms && item.propertyType !== 'Land'">
+                      <span class="material-icons" style="font-size: 16px;">king_bed</span> {{item.bedrooms}} Beds
+                    </div>
+                    <div class="spec-item" v-if="item.bathrooms && item.propertyType !== 'Land'">
+                      <span class="material-icons" style="font-size: 16px;">bathtub</span> {{item.bathrooms}} Baths
+                    </div>
+                    <div class="spec-item" v-if="item.landSize">
+                      <span class="material-icons" style="font-size: 16px;">square_foot</span> {{item.landSize}} sqm
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modal View -->
+    <div class="modal" :class="{'is-active': activeItem}">
+      <div class="modal-background" @click="activeItem = null"></div>
+      <div class="modal-card" v-if="activeItem" style="max-width: 700px;">
+        <header class="modal-card-head">
+          <p class="modal-card-title">{{activeItem.title}}</p>
+          <button class="delete" aria-label="close" @click="activeItem = null"></button>
+        </header>
+        <section class="modal-card-body">
+          <div class="carousel-container mb-4" style="border-radius: 8px;">
+            <div v-for="(img, idx) in activeItem.images" :key="idx" class="carousel-slide">
+              <img :src="img" style="height: 350px; object-fit: cover;">
+            </div>
+          </div>
+          <div class="content">
+            <h3 class="has-text-primary" :class="{'strike-price': isSold(activeItem)}">
+              OMR {{Number(activeItem.price).toLocaleString()}}
+            </h3>
+            <p><strong>Status:</strong> {{getStatusText(activeItem)}}</p>
+            <p><strong>Location:</strong> {{activeItem.location}}</p>
+            <p><strong>Description:</strong></p>
+            <p style="white-space: pre-line;">{{activeItem.description}}</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        properties: [],
+        categories: [],
+        selectedCategory: '',
+        activeItem: null
+      },
+      computed: {
+        filteredProperties() {
+          if (!this.selectedCategory) return this.properties;
+          const selCat = String(this.selectedCategory).trim().toLowerCase();
+          return this.properties.filter(p => String(p.propertyType || '').trim().toLowerCase() === selCat);
+        }
+      },
+      methods: {
+        selectCategory(catName) {
+          this.selectedCategory = catName;
+        },
+        openModal(item) {
+          this.activeItem = item;
+        },
+        isSold(item) {
+          if (!item) return false;
+          const val = String(item.status || item.Status || '').trim().toLowerCase();
+          return val !== '' && val !== 'available';
+        },
+        getStatusText(item) {
+          if (!item) return 'SOLD';
+          const val = String(item.status || item.Status || '').trim().toUpperCase();
+          return (val === 'AVAILABLE' || val === '') ? 'SOLD' : val;
+        },
+        nextSlide(item) {
+          const container = this.$refs['carousel_' + item.id][0];
+          container.scrollBy({ left: container.clientWidth, behavior: 'smooth' });
+        },
+        prevSlide(item) {
+          const container = this.$refs['carousel_' + item.id][0];
+          container.scrollBy({ left: -container.clientWidth, behavior: 'smooth' });
+        },
+        onScroll(item, event) {
+          const container = event.target;
+          const index = Math.round(container.scrollLeft / container.clientWidth);
+          this.$set(item, 'activeImgIndex', index);
+        }
+      },
+     mounted() {
+  // Fetch properties from Google Apps Script API
+  fetch(this.webAppUrl)
+    .then(response => response.json())
+    .then(data => {
+      this.properties = (data || []).map(p => ({ ...p, activeImgIndex: 0 }));
+    })
+    .catch(error => console.error('Error fetching data:', error));
+};
+    data: {
+  // Replace with your copied Apps Script Web App URL from Step 2
+  webAppUrl: 'https://script.google.com/macros/s/AKfycbxNOs4k8H3SXAqIRkDXn1JSqUCHkFrSGR9_cTVTwYWOsu_5YYWV15w3rPEmRG4Z0A9zLQ/exec',
+  properties: [],
+  categories: [],
+  selectedCategory: '',
+  activeItem: null
+},
+  </script>
+
+</body>
+</html>
