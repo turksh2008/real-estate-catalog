@@ -444,51 +444,63 @@
           });
         }
       },
-      methods: {
-        fetchProperties() {
-          this.loading = true;
-          fetch(this.webAppUrl)
-            .then(res => res.json())
-            .then(data => {
-              this.properties = (data || []).map(p => ({ ...p, activeImgIndex: 0 }));
-              this.loading = false;
-            })
-            .catch(err => {
-              console.error('Error fetching properties:', err);
-              this.loading = false;
-            });
-        },
-        openModal(item) {
-          this.activeItem = item;
-        },
-        isSold(item) {
-          if (!item) return false;
-          const val = String(item.status || item.Status || '').trim().toLowerCase();
-          return val !== '' && val !== 'available';
-        },
-        getStatusText(item) {
-          if (!item) return 'تم البيع';
-          const val = String(item.status || item.Status || '').trim().toUpperCase();
-          return (val === 'AVAILABLE' || val === '') ? 'تم البيع' : val;
-        },
-        nextSlide(item) {
-          const container = this.$refs['carousel_' + item.id][0];
-          container.scrollBy({ left: -container.clientWidth, behavior: 'smooth' });
-        },
-        prevSlide(item) {
-          const container = this.$refs['carousel_' + item.id][0];
-          container.scrollBy({ left: container.clientWidth, behavior: 'smooth' });
-        },
-        onScroll(item, event) {
-          const container = event.target;
-          const index = Math.round(Math.abs(container.scrollLeft) / container.clientWidth);
-          this.$set(item, 'activeImgIndex', index);
-        }
-      },
-      mounted() {
-        this.fetchProperties();
-      }
+     methods: {
+  fetchProperties() {
+    this.loading = true;
+    // redirect: 'follow' ensures Safari handles Google Apps Script redirects correctly
+    fetch(this.webAppUrl, { redirect: 'follow' })
+      .then(res => res.json())
+      .then(data => {
+        this.properties = (data || []).map(p => ({ ...p, activeImgIndex: 0 }));
+        this.loading = false;
+      })
+      .catch(err => {
+        console.error('Error fetching properties:', err);
+        this.loading = false;
+      });
+  },
+  openModal(item) {
+    this.activeItem = item;
+  },
+  isSold(item) {
+    if (!item) return false;
+    const val = String(item.status || item.Status || '').trim().toLowerCase();
+    return val !== '' && val !== 'available';
+  },
+  getStatusText(item) {
+    if (!item) return 'تم البيع';
+    const val = String(item.status || item.Status || '').trim().toUpperCase();
+    return (val === 'AVAILABLE' || val === '') ? 'تم البيع' : val;
+  },
+  nextSlide(item) {
+    const container = this.$refs['carousel_' + item.id][0];
+    if (!container) return;
+    // Cross-browser RTL smooth scroll forward
+    const scrollAmount = container.clientWidth;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
+    container.scrollBy({ 
+      left: isSafari ? scrollAmount : -scrollAmount, 
+      behavior: 'smooth' 
     });
-  </script>
-</body>
-</html>
+  },
+  prevSlide(item) {
+    const container = this.$refs['carousel_' + item.id][0];
+    if (!container) return;
+    // Cross-browser RTL smooth scroll backward
+    const scrollAmount = container.clientWidth;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    container.scrollBy({ 
+      left: isSafari ? -scrollAmount : scrollAmount, 
+      behavior: 'smooth' 
+    });
+  },
+  onScroll(item, event) {
+    const container = event.target;
+    // Normalizing scroll position calculation for WebKit/Safari
+    const scrollPos = Math.abs(container.scrollLeft);
+    const index = Math.round(scrollPos / container.clientWidth);
+    this.$set(item, 'activeImgIndex', index);
+  }
+}
