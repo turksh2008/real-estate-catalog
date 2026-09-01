@@ -303,7 +303,7 @@
           <div class="is-flex is-justify-content-space-between is-align-items-center">
             <div>
               <h1 class="title has-text-white is-size-3 mb-1">
-                <span class="material-icons" style="vertical-align: middle;">domain</span> عقاراتي
+                <span class="material-icons" style="vertical-align: middle;">domain</span> اوتاد
               </h1>
               <h2 class="subtitle has-text-grey-light is-size-6 mt-1">تصفح العقارات المتاحة</h2>
             </div>
